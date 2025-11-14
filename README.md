@@ -1,173 +1,137 @@
 # WebKurierPhone-iOS
 
-Native iOS application for the WebKurier multilingual AI translator, German A1–C1 learning system, real-time AI calls, GPT dialog assistant, and vocabulary trainer.
-Built with SwiftUI, WebRTC, AVSpeech, and WebKurierPhoneCore API.
+iOS client for the multilingual AI translator and German A1–C1 learning platform.  
+Built with **SwiftUI**, **Combine**, and connected to the unified backend **WebKurierPhoneCore**.
 
-⸻
+---
 
-🇬🇧 English
+## 🌍 Overview
 
-WebKurierPhone-iOS provides a fast and intuitive mobile interface for:
-	•	AI-powered text & voice translation
-	•	Real-time interpreted calls
-	•	GPT-based chat and dialog practice
-	•	German A1–C1 lessons (audio, images, grammar, exercises)
-	•	Vocabulary trainer + spaced repetition (SRS)
-	•	Speech recognition + pronunciation feedback
-	•	Multilingual menu with flag icons
+**Languages available now:** 🇬🇧 English, 🇩🇪 German, 🇺🇦 Ukrainian, 🇷🇺 Russian  
+More EU languages coming soon.
 
-Fully synced with WebKurierPhoneCore.
+WebKurierPhone-iOS provides:
+- real-time translation (text → voice → conversation);
+- German A1–C1 lessons with images, audio, dialogs and quizzes;
+- GPT-powered AI chat for practicing speaking and grammar;
+- progress tracking and daily training;
+- voice practice with STT/TTS (speech recognition and synthesis);
+- seamless sync with Android and WebKurierPhoneCore.
 
-⸻
+Designed for everyday use, job interviews, study, immigration, and Jobcenter requirements.
 
-🇩🇪 Deutsch
+---
 
-Native iOS-App für den mehrsprachigen WebKurier-Übersetzer, Deutschkurse (A1–C1), KI-Telefonie, GPT-Dialoge und Vokabeltrainer.
-Erstellt mit SwiftUI und verbunden mit dem WebKurierPhoneCore-Backend.
+## 🧱 Features
 
-⸻
+- 🔁 **Instant translation** (bidirectional)  
+- 🎓 **German A1–C1** full program with exercises  
+- 🎤 **Speech practice** — repeat, record, compare  
+- 💬 **AI Chat (GPT)** — real-time teacher  
+- 🚩 **Flag-based language picker**  
+- 📚 **Vocabulary builder**  
+- 📊 **Learning analytics**  
+- 🌙 **Dark/Light theme** (auto system mode)
 
-🇺🇦 Українська
+---
 
-iOS-додаток для перекладача WebKurier, курсів німецької A1–C1, голосових дзвінків з AI-перекладом, GPT-чату та тренажера лексики.
+## 🏗 Project Structure
 
-⸻
-
-🇷🇺 Русский
-
-iOS-приложение для переводчика WebKurier, немецкого A1–C1, звонков с AI-переводчиком, GPT-чата и тренажёра слов.
-
-⸻
-
-⸻
-
-🚀 Features
-
-🔊 Translator
-	•	Text translation
-	•	Voice translation
-	•	Photo → text (OCR)
-	•	Auto-language detection
-
-📞 AI Calls
-	•	Real-time interpreter via WebRTC
-	•	Noise reduction
-	•	Adaptive audio filters
-	•	Works in background mode
-
-🎓 German A1–C1
-	•	Lessons with images, audio, video
-	•	Dialog simulations
-	•	Grammar explanations
-	•	Tests + quizzes
-	•	Pronunciation trainer
-
-🤖 GPT / AI Chat
-	•	Writing + speaking mode
-	•	Roleplay dialogs (job interview, doctor, landlord, etc.)
-	•	Corrects grammar and pronunciation
-
-📚 Vocabulary & Progress
-	•	Flashcards
-	•	Automated spaced repetition
-	•	Tracking learning statistics
-
-⸻
-
-🏗 Tech Stack
-
-Frontend
-	•	SwiftUI
-	•	Combine
-	•	AVSpeechSynthesizer
-	•	AVAudioEngine
-	•	Speech framework
-	•	Vision OCR
-	•	WebRTC
-
-Backend
-
-Connects to:
-	•	WebKurierPhoneCore
-	•	WebKurierChain (login, secure storage)
-	•	WebKurierSecurity (GDPR-safe encryption)
-
-⸻
-
-📡 API Connection
-
-Config in:
-
-/Sources/WebKurierApp/Config/API.swift
-
-Example:
-
-struct API {
-    static let baseURL = "https://phonecore.webkurier.app"
-}
+```text
+WebKurierPhone-iOS/
+    ├─ WebKurierPhone/
+    │   ├─ App/
+    │   │   └─ WebKurierPhoneApp.swift      # entry point
+    │   ├─ Core/
+    │   │   ├─ Networking/                  # API → PhoneCore
+    │   │   ├─ Models/                      # DTOs / lesson models
+    │   │   ├─ TTS/ STT/                    # speech systems
+    │   │   └─ Localization/                # flags, L10N strings
+    │   ├─ Screens/
+    │   │   ├─ TranslateView.swift
+    │   │   ├─ LessonsView.swift
+    │   │   ├─ LessonDetailView.swift
+    │   │   ├─ AIChatView.swift
+    │   │   ├─ CallView.swift               # future WebRTC
+    │   │   └─ SettingsView.swift
+    │   └─ Resources/
+    │       ├─ lesson_media/
+    │       └─ flags/
+    ├─ Package.swift
+    ├─ README.md
+    └─ LICENSE
 
 
 ⸻
 
-🧱 Project Structure
+🔗 Backend Integration
 
-WebKurierPhone-iOS
-│
-├── Sources/
-│   ├── App/
-│   │   ├── WebKurierPhoneApp.swift
-│   │   ├── Navigation/
-│   ├── Features/
-│   │   ├── Translate/
-│   │   ├── Call/
-│   │   ├── Lessons/
-│   │   ├── GPTChat/
-│   │   └── Vocabulary/
-│   ├── Models/
-│   └── Utils/
-│
-└── Resources/
-    ├── Icons/
-    ├── Flags/
-    └── LessonMedia/
+All AI and translation logic is processed through WebKurierPhoneCore, not on the device.
 
+App → PhoneCore API → AI Provider (OpenAI, local model) → PhoneCore → App
+
+Advantages:
+	•	no API keys in iOS bundle
+	•	centralized limits and analytics
+	•	easy to switch AI models (GPT, local, hybrid)
 
 ⸻
 
-🐳 Optional: CI/CD
+🛠 Installation (Dev)
+	1.	Clone repository:
 
-GitHub Actions to build & sign iOS app (optional):
+git clone https://github.com/<your-username>/WebKurierPhone-iOS.git
 
-.github/workflows/ios-build.yml
+	2.	Open project:
 
+open WebKurierPhone-iOS/WebKurierPhone.xcodeproj
 
-⸻
+	3.	Set backend URL in:
 
-🔐 Privacy & Security
-	•	No data stored locally unless user approves
-	•	Encrypted requests via https
-	•	Fully GDPR compliant
-	•	API keys stored in Keychain
+WebKurierPhone/Core/Networking/ApiConfig.swift
 
-⸻
-
-📱 App Screens (будут добавлены позже)
-	•	Translator
-	•	Voice Call
-	•	Lessons A1–C1
-	•	Flashcards
-	•	GPT Chat
-	•	Settings
-	•	Language/Flags menu
+	4.	Run on simulator or device.
 
 ⸻
 
-🏁 Status
-
-Version: 0.1
-State: Active development
-Platform: iOS 15+
-Language: Swift 5, SwiftUI
+🚀 Roadmap
+	•	WebRTC for call translation
+	•	Offline phrasebook and lessons
+	•	Full EU language support
+	•	Flashcards generator (AI-based)
+	•	Jobcenter PDF reports via PhoneCore
+	•	Shared progress across devices
 
 ⸻
+
+📄 License
+
+Made in Germany 🇩🇪
+© 2025 Vladyslav Hushchyn — WebKurier Project.
+License to be defined in LICENSE.md.
+
+---
+
+# Готов продолжать
+
+Если хочешь — выбирай, что делаем следующим:
+
+### **Вариант A — Полная структура уроков A1–C1**
+С логикой:
+- lesson.json  
+- picture.mp4 / image.jpg  
+- native audio  
+- упражнения (test, fill-in, dialog)
+
+### **Вариант B — API для PhoneCore**
+Endpoints:
+- `/translate`
+- `/lesson/get`
+- `/lesson/submit`
+- `/chat/gpt`
+- `/call/start`
+
+### **Вариант C — Сразу Android структуру (папки + каркас)**
+
+Напиши: **«Начинаем с A/B/C»**.
 
