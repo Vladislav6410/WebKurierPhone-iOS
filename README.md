@@ -1,137 +1,204 @@
-# WebKurierPhone-iOS
+# WebKurierPhone-iOS — Native iOS Client for the WebKurier Ecosystem
 
-iOS client for the multilingual AI translator and German A1–C1 learning platform.  
-Built with **SwiftUI**, **Combine**, and connected to the unified backend **WebKurierPhoneCore**.
+**WebKurierPhone-iOS** is the official native iOS application for the WebKurier platform.  
+It provides a high-performance mobile interface for all communication, translation, voice, telephony, geodesy previews, WebCoin wallet interactions, and AI agents integrated through WebKurierPhoneCore and WebKurierCore.
 
----
-
-## 🌍 Overview
-
-**Languages available now:** 🇬🇧 English, 🇩🇪 German, 🇺🇦 Ukrainian, 🇷🇺 Russian  
-More EU languages coming soon.
-
-WebKurierPhone-iOS provides:
-- real-time translation (text → voice → conversation);
-- German A1–C1 lessons with images, audio, dialogs and quizzes;
-- GPT-powered AI chat for practicing speaking and grammar;
-- progress tracking and daily training;
-- voice practice with STT/TTS (speech recognition and synthesis);
-- seamless sync with Android and WebKurierPhoneCore.
-
-Designed for everyday use, job interviews, study, immigration, and Jobcenter requirements.
+This app is built with:
+- Swift / SwiftUI
+- WebRTC stack (for calls & voice translation)
+- Secure local storage
+- REST & WebSocket connection to PhoneCore & Core
+- Adaptive UI layouts for iPhone & iPad
+- Native media handling for DreamMaker
 
 ---
 
-## 🧱 Features
-
-- 🔁 **Instant translation** (bidirectional)  
-- 🎓 **German A1–C1** full program with exercises  
-- 🎤 **Speech practice** — repeat, record, compare  
-- 💬 **AI Chat (GPT)** — real-time teacher  
-- 🚩 **Flag-based language picker**  
-- 📚 **Vocabulary builder**  
-- 📊 **Learning analytics**  
-- 🌙 **Dark/Light theme** (auto system mode)
-
----
-
-## 🏗 Project Structure
+# 1. Role in the Ecosystem (Hierarchy Level 3)
 
 ```text
+Level 0 — WebKurierHybrid (orchestrator)
+Level 1 — WebKurierCore (gateway & terminal)
+Level 2 — WebKurierPhoneCore (communication hub)
+Level 2 — WebKurierVehicleHub (transport & geodesy)
+Level 2 — WebKurierChain (blockchain & tokens)
+Level 2 — WebKurierSecurity (security)
+Level 3 — WebKurierPhone-iOS (THIS REPOSITORY)
+Level 3 — WebKurierPhone-Android
+Level 4 — WebKurierSite
+Level 5 — WebKurierX
+
+iOS serves as a direct user client, providing:
+
+User → iOS App → PhoneCore/Core → Domain Hubs → Core → iOS App
+
+
+⸻
+
+2. App Capabilities
+
+2.1. Translation & Communication
+	•	Real-time translation (text/voice)
+	•	Auto language detection
+	•	Document & image translation
+	•	Full integration with TranslatorAgent and VoiceAgent
+
+2.2. Voice & Calls (WebRTC)
+	•	Voice calls between users
+	•	Live bilingual subtitles
+	•	Audio processing on-device
+	•	High-quality echo cancellation
+
+2.3. Lessons A1–C1
+	•	Multilingual practice tool
+	•	Listening/reading exercises
+	•	Speaking mode (mic → STT → translation)
+
+2.4. Emotional & Social Agents
+	•	Romantic assistant
+	•	HR interview simulations
+	•	Marketing notifications
+	•	Cafe ordering flows
+
+2.5. DreamMaker Media
+	•	Generate images, audio & video
+	•	Local preview, save, export
+
+2.6. WebCoin Wallet
+	•	View balance
+	•	Rewards from tasks & interactions
+	•	Transactions synced with Chain
+
+2.7. Geodesy & VehicleHub Support
+	•	Receive mission summaries
+	•	Receive warnings/alerts during flights
+	•	Live status streams (text only)
+	•	PV/3D previews (static render)
+
+⸻
+
+3. Repository Structure (High-Level)
+
 WebKurierPhone-iOS/
-    ├─ WebKurierPhone/
-    │   ├─ App/
-    │   │   └─ WebKurierPhoneApp.swift      # entry point
-    │   ├─ Core/
-    │   │   ├─ Networking/                  # API → PhoneCore
-    │   │   ├─ Models/                      # DTOs / lesson models
-    │   │   ├─ TTS/ STT/                    # speech systems
-    │   │   └─ Localization/                # flags, L10N strings
-    │   ├─ Screens/
-    │   │   ├─ TranslateView.swift
-    │   │   ├─ LessonsView.swift
-    │   │   ├─ LessonDetailView.swift
-    │   │   ├─ AIChatView.swift
-    │   │   ├─ CallView.swift               # future WebRTC
-    │   │   └─ SettingsView.swift
-    │   └─ Resources/
-    │       ├─ lesson_media/
-    │       └─ flags/
-    ├─ Package.swift
-    ├─ README.md
-    └─ LICENSE
+├── App/
+│   ├── WebKurierPhoneApp.swift
+│   ├── Scenes/
+│   │   ├── HomeView.swift
+│   │   ├── TranslatorView.swift
+│   │   ├── VoiceCallView.swift
+│   │   ├── LessonsView.swift
+│   │   ├── WalletView.swift
+│   │   ├── CafeView.swift
+│   │   ├── RomanticView.swift
+│   │   ├── HRView.swift
+│   │   ├── DreamMakerView.swift
+│   │   └── SettingsView.swift
+│   ├── Components/
+│   │   ├── AgentTile.swift
+│   │   ├── AudioButton.swift
+│   │   └── FilePicker.swift
+│   ├── Services/
+│   │   ├── PhoneCoreAPI.swift
+│   │   ├── CoreGateway.swift
+│   │   ├── WebRTCClient.swift
+│   │   ├── AudioEngine.swift
+│   │   └── LocalizationManager.swift
+│   ├── Models/
+│   │   ├── TranslationModel.swift
+│   │   ├── VoiceCallModel.swift
+│   │   ├── LessonModel.swift
+│   │   └── WalletModel.swift
+│   └── Utils/
+│       ├── ImageLoader.swift
+│       ├── FileProcessor.swift
+│       └── SecureStore.swift
+├── Resources/
+│   ├── Localizations/
+│   ├── AppIcons/
+│   ├── Sounds/
+│   └── Media/
+├── Config/
+│   ├── env.example.plist
+│   └── endpoints.json
+└── Docs/
+    ├── ARCHITECTURE.md
+    ├── API_REFERENCE.md
+    └── BUILD_GUIDE.md
 
 
 ⸻
 
-🔗 Backend Integration
+4. Integration Model
 
-All AI and translation logic is processed through WebKurierPhoneCore, not on the device.
+PhoneCore Integration
 
-App → PhoneCore API → AI Provider (OpenAI, local model) → PhoneCore → App
+The app relies on:
+	•	REST for translation, lessons, wallet, cafe
+	•	WebSocket for real-time voice & subtitles
+	•	WebRTC for calls
 
-Advantages:
-	•	no API keys in iOS bundle
-	•	centralized limits and analytics
-	•	easy to switch AI models (GPT, local, hybrid)
+Core Integration
 
-⸻
+Used for:
+	•	account/session management
+	•	terminal-based commands (restricted)
+	•	agent discovery + UI routing
 
-🛠 Installation (Dev)
-	1.	Clone repository:
+Chain Integration
 
-git clone https://github.com/<your-username>/WebKurierPhone-iOS.git
+Indirect:
+	•	balance fetch
+	•	reward history
+	•	transaction confirmation
 
-	2.	Open project:
+VehicleHub Integration
 
-open WebKurierPhone-iOS/WebKurierPhone.xcodeproj
+Receive-only:
+	•	flight warnings
+	•	mission summaries
+	•	telemetry notifications
 
-	3.	Set backend URL in:
-
-WebKurierPhone/Core/Networking/ApiConfig.swift
-
-	4.	Run on simulator or device.
-
-⸻
-
-🚀 Roadmap
-	•	WebRTC for call translation
-	•	Offline phrasebook and lessons
-	•	Full EU language support
-	•	Flashcards generator (AI-based)
-	•	Jobcenter PDF reports via PhoneCore
-	•	Shared progress across devices
+Security Integration
+	•	URL safety
+	•	file upload scanning (via API)
+	•	phishing-safe message filters
 
 ⸻
 
-📄 License
+5. CI/CD Policy
 
-Made in Germany 🇩🇪
-© 2025 Vladyslav Hushchyn — WebKurier Project.
-License to be defined in LICENSE.md.
+The iOS app build is controlled by WebKurierHybrid via:
+	•	Xcode Cloud or GitHub Actions (Fastlane)
+	•	Code signing policies
+	•	App Store deployment channel
+	•	TestFlight distribution
+	•	Secrets stored ONLY in Hybrid
 
----
+⸻
 
-# Готов продолжать
+6. Agent Glossary (EN + RU translations only)
 
-Если хочешь — выбирай, что делаем следующим:
+TranslatorAgent — Переводчик
+VoiceAgent — Голосовой ассистент
+PhoneAgent — Телефония
+LessonsAgent — Уроки A1–C1
+RomanticAgent — Романтический собеседник
+MemoryAgent — Память
+DreamAgent — Генератор медиа
+CafeAgent — Агент кафе и заказов
+WalletAgent — Кошелёк WebCoin
+MarketingAgent — Маркетолог
+HRAgent — HR-агент
+SecurityAgent — Агент безопасности
 
-### **Вариант A — Полная структура уроков A1–C1**
-С логикой:
-- lesson.json  
-- picture.mp4 / image.jpg  
-- native audio  
-- упражнения (test, fill-in, dialog)
 
-### **Вариант B — API для PhoneCore**
-Endpoints:
-- `/translate`
-- `/lesson/get`
-- `/lesson/submit`
-- `/chat/gpt`
-- `/call/start`
+⸻
 
-### **Вариант C — Сразу Android структуру (папки + каркас)**
+7. Governance
 
-Напиши: **«Начинаем с A/B/C»**.
+WebKurierPhone-iOS is built and maintained by
+Vladyslav Hushchyn (VladoExport)
+Germany, EU.
+
+⸻
+
 
