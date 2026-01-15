@@ -1,0 +1,29 @@
+{
+  "environment": "development",
+
+  "core": {
+    "baseUrl": "https://core.webkurier.example",
+    "auth": "/auth",
+    "profile": "/me",
+    "agents": "/agents",
+    "wallet": "/wallet"
+  },
+
+  "phonecore": {
+    "baseUrl": "https://phonecore.webkurier.example",
+    "translate": "/translate",
+    "call": "/call",
+    "lessons": "/lessons"
+  },
+
+  "websocket": {
+    "baseUrl": "wss://ws.webkurier.example",
+    "realtime": "/realtime",
+    "calls": "/calls"
+  },
+
+  "security": {
+    "scanFile": "/security/scan",
+    "checkUrl": "/security/url"
+  }
+}
