@@ -1,0 +1,32 @@
+/* General */
+"home.title" = "WebKurier";
+"loading.connecting" = "Connecting to WebKurier Core…";
+
+/* Tabs */
+"tab.home" = "Home";
+"tab.translate" = "Translate";
+"tab.call" = "Call";
+"tab.lessons" = "Lessons";
+"tab.wallet" = "Wallet";
+"tab.settings" = "Settings";
+
+/* Translator */
+"translator.title" = "Translator";
+"translator.translate" = "Translate";
+
+/* Voice Call */
+"call.title" = "Voice Call";
+"call.start" = "Start Call";
+"call.end" = "End Call";
+
+/* Lessons */
+"lessons.title" = "Lessons";
+
+/* Wallet */
+"wallet.title" = "Wallet";
+"wallet.balance" = "WebCoin Balance";
+
+/* Settings */
+"settings.title" = "Settings";
+"settings.language" = "Language";
+"settings.logout" = "Log out";
