@@ -1,167 +1,78 @@
 import Foundation
+import UIKit
 
-// MARK: - MediaCleanerAPI (Core Gateway)
-// Calls WebKurierCore endpoints:
-//  POST /api/media-cleaner/session/start
-//  POST /api/media-cleaner/session/submit
-//  GET  /api/media-cleaner/sessions?userId=...
-//  POST /api/media-cleaner/reward
+// MARK: - MediaCleanerService
+// Orchestrates the flow on iOS:
+// 1) startSession (Core)
+// 2) run local scan (privacy-first; metadata only)
+// 3) submitResults summary (Core)
+// 4) rewardCleanup (optional WebCoins)
 
-final class MediaCleanerAPI {
-    static let shared = MediaCleanerAPI()
+final class MediaCleanerService {
+    static let shared = MediaCleanerService()
 
-    // Configure this from your App config later (Info.plist / config.json / remote config)
-    var baseURL: URL = URL(string: "http://localhost:3000")!
+    private let api: MediaCleanerAPI
+    private let scanner: MediaCleanerScanStub
 
-    private let session: URLSession
-
-    init(session: URLSession = .shared) {
-        self.session = session
+    init(
+        api: MediaCleanerAPI = .shared,
+        scanner: MediaCleanerScanStub = MediaCleanerScanStub()
+    ) {
+        self.api = api
+        self.scanner = scanner
     }
 
-    // MARK: - DTOs
+    // MARK: - Public Flow
 
-    struct StartSessionRequest: Codable {
-        let userId: String
-        let deviceId: String
-        let mode: String // "local_only" | "sync_enabled"
-    }
-
-    struct StartSessionResponse: Codable {
-        struct Session: Codable {
-            let sessionId: String
-            let userId: String
-            let deviceId: String
-            let mode: String
-            let createdAt: String
-            let status: String
-        }
-
-        let ok: Bool
-        let session: Session?
-        let error: String?
-    }
-
-    struct SubmitResultsRequest: Codable {
-        let userId: String
-        let sessionId: String
-        let resultsSummary: MediaCleanerResultsSummary
-    }
-
-    struct SubmitResultsResponse: Codable {
-        let ok: Bool
-        let error: String?
-    }
-
-    struct RewardRequest: Codable {
-        let userId: String
-        let sessionId: String
-        let freedBytes: Int
-    }
-
-    struct RewardResponse: Codable {
-        let ok: Bool
-        let coinsAwarded: Int?
-        let error: String?
-    }
-
-    struct SessionsResponse: Codable {
-        struct Session: Codable {
-            let sessionId: String
-            let userId: String
-            let deviceId: String
-            let mode: String
-            let createdAt: String
-            let status: String
-        }
-
-        let ok: Bool
-        let sessions: [Session]?
-        let error: String?
-    }
-
-    // MARK: - Public API
-
-    func startSession(
+    /// Full flow:
+    /// Start session -> scan Photos (metadata) -> submit -> reward (optional)
+    func runCleanupFlow(
         userId: String,
         deviceId: String,
-        mode: String = "local_only"
-    ) async throws -> StartSessionResponse {
-        let req = StartSessionRequest(userId: userId, deviceId: deviceId, mode: mode)
-        return try await post(path: "/api/media-cleaner/session/start", body: req, as: StartSessionResponse.self)
-    }
+        mode: String = "local_only",
+        onProgress: ((MediaCleanerScanStub.ScanProgress) -> Void)? = nil
+    ) async throws -> (sessionId: String, summary: MediaCleanerResultsSummary, coinsAwarded: Int) {
 
-    func submitResults(
-        userId: String,
-        sessionId: String,
-        summary: MediaCleanerResultsSummary
-    ) async throws -> SubmitResultsResponse {
-        let req = SubmitResultsRequest(userId: userId, sessionId: sessionId, resultsSummary: summary)
-        return try await post(path: "/api/media-cleaner/session/submit", body: req, as: SubmitResultsResponse.self)
-    }
+        // ✅ 1) Start session in Core
+        let start = try await api.startSession(userId: userId, deviceId: deviceId, mode: mode)
 
-    func listSessions(userId: String) async throws -> SessionsResponse {
-        var comps = URLComponents(url: baseURL.appendingPathComponent("/api/media-cleaner/sessions"), resolvingAgainstBaseURL: false)
-        comps?.queryItems = [URLQueryItem(name: "userId", value: userId)]
-        guard let url = comps?.url else { throw URLError(.badURL) }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        let (data, resp) = try await session.data(for: request)
-        try validateHTTP(resp)
-        return try decode(SessionsResponse.self, from: data)
-    }
-
-    func rewardCleanup(
-        userId: String,
-        sessionId: String,
-        freedBytes: Int
-    ) async throws -> RewardResponse {
-        let req = RewardRequest(userId: userId, sessionId: sessionId, freedBytes: freedBytes)
-        return try await post(path: "/api/media-cleaner/reward", body: req, as: RewardResponse.self)
-    }
-
-    // MARK: - Internals
-
-    private func post<TReq: Encodable, TRes: Decodable>(
-        path: String,
-        body: TReq,
-        as type: TRes.Type
-    ) async throws -> TRes {
-        let url = baseURL.appendingPathComponent(path)
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        request.httpBody = try JSONEncoder().encode(body)
-
-        let (data, resp) = try await session.data(for: request)
-        try validateHTTP(resp)
-        return try decode(type, from: data)
-    }
-
-    private func validateHTTP(_ resp: URLResponse) throws {
-        guard let http = resp as? HTTPURLResponse else { return }
-        guard (200..<300).contains(http.statusCode) else {
-            throw NSError(domain: "MediaCleanerAPI",
-                          code: http.statusCode,
-                          userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode)"])
+        guard start.ok, let session = start.session else {
+            throw NSError(
+                domain: "MediaCleanerService",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: start.error ?? "Failed to start session"]
+            )
         }
-    }
 
-    private func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
-        do {
-            return try JSONDecoder().decode(type, from: data)
-        } catch {
-            // Helpful fallback for debugging
-            let raw = String(data: data, encoding: .utf8) ?? "<non-utf8>"
-            throw NSError(domain: "MediaCleanerAPI",
-                          code: -1,
-                          userInfo: [NSLocalizedDescriptionKey: "Decode error: \(error)\nRaw: \(raw)"])
+        // ✅ 2) Local scan (privacy-first)
+        let summary = try await scanner.scanLibrary(onProgress: onProgress)
+
+        // ✅ 3) Submit summary (metadata only) to Core
+        let submit = try await api.submitResults(userId: userId, sessionId: session.sessionId, summary: summary)
+        if !submit.ok {
+            throw NSError(
+                domain: "MediaCleanerService",
+                code: -2,
+                userInfo: [NSLocalizedDescriptionKey: submit.error ?? "Failed to submit results"]
+            )
         }
+
+        // ✅ 4) Reward coins (optional)
+        // Here we use "estimated freed bytes" as a proxy.
+        // Later: compute real freed bytes after actual deletion/compression.
+        let freedBytes = summary.duplicates.estimatedFreedBytes
+            + summary.blur.estimatedFreedBytes
+            + summary.screenshots.estimatedFreedBytes
+            + summary.slimMode.estimatedFreedBytes
+
+        let reward = try await api.rewardCleanup(
+            userId: userId,
+            sessionId: session.sessionId,
+            freedBytes: freedBytes
+        )
+
+        let coins = reward.coinsAwarded ?? 0
+        return (sessionId: session.sessionId, summary: summary, coinsAwarded: coins)
     }
 }
+
