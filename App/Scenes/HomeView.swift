@@ -52,12 +52,48 @@ struct HomeView: View {
                     }
                     .buttonStyle(.plain)
 
-                    // ✅ NEW: MediaCleaner (SmartSort)
+                    NavigationLink(destination: CafeView()) {
+                        AgentTile(
+                            title: "Cafe",
+                            subtitle: "Order flows & quick actions",
+                            systemImage: "cup.and.saucer"
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink(destination: RomanticView()) {
+                        AgentTile(
+                            title: "Romantic",
+                            subtitle: "Emotional & social agent",
+                            systemImage: "heart"
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink(destination: HRView()) {
+                        AgentTile(
+                            title: "HR",
+                            subtitle: "Interview simulations & CV analysis",
+                            systemImage: "person.text.rectangle"
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    // ✅ MediaCleaner (SmartSort)
                     NavigationLink(destination: MediaCleanerView()) {
                         AgentTile(
                             title: "MediaCleaner",
                             subtitle: "Cleanup duplicates, blur, screenshots",
                             systemImage: "wand.and.stars"
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink(destination: SettingsView()) {
+                        AgentTile(
+                            title: "Settings",
+                            subtitle: "Language & preferences",
+                            systemImage: "gear"
                         )
                     }
                     .buttonStyle(.plain)
