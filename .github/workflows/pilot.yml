@@ -1,0 +1,32 @@
+name: Pilot validation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'App/Pilot/**'
+      - 'App/PilotCore/**'
+      - 'App/WebKurierPhoneApp.swift'
+      - 'App/Services/LocalizationManager.swift'
+      - 'Resources/Localizations/Copilot.strings'
+      - 'Tests/**'
+      - 'Package.swift'
+      - 'project.yml'
+      - '.github/workflows/pilot.yml'
+permissions:
+  contents: read
+jobs:
+  pilot:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test portable course and service state
+        run: swift test
+      - name: Generate isolated pilot app
+        run: |
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodegen generate --spec project.yml
+      - name: Test pilot app on available iPhone simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; data=json.load(sys.stdin); print(next(d["udid"] for runtime,devices in data["devices"].items() if "iOS" in runtime for d in devices if d["name"].startswith("iPhone")))')
+          xcodebuild test -project WebKurierPilot.xcodeproj -scheme WebKurierPilot -destination "platform=iOS Simulator,id=$DEVICE_ID" -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO

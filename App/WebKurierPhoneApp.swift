@@ -1,20 +1,22 @@
 import SwiftUI
 
 @main
+@MainActor
 struct WebKurierPhoneApp: App {
 
     @StateObject private var localizationManager = LocalizationManager()
-    @StateObject private var coreGateway = CoreGateway.shared
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            PilotHomeView()
                 .environmentObject(localizationManager)
-                .environmentObject(coreGateway)
         }
     }
 }
 
+#if !PILOT_MVP
+// Legacy entry remains available to a future legacy target. The pilot never
+// bootstraps the placeholder guest authentication or advanced integrations.
 struct RootView: View {
 
     @EnvironmentObject private var coreGateway: CoreGateway
@@ -73,3 +75,4 @@ struct LoadingView: View {
         .padding()
     }
 }
+#endif
