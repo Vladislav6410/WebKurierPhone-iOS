@@ -1,0 +1,7 @@
+.build/
+.swiftpm/
+WebKurierPilot.xcodeproj/
+DerivedData/
+Config/env.plist
+*.xcuserstate
+xcuserdata/
