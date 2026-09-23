@@ -5,10 +5,10 @@ import Combine
 final class PilotStore: ObservableObject {
     @Published var course = PilotCourseState()
     @Published private(set) var github = PilotGitHubConnection()
-    @Published private(set) var conversations: [Int: [PilotMessage]] = [:]
-    @Published var drafts: [Int: String] = [:]
-    @Published private(set) var sendingDays: Set<Int> = []
-    @Published private(set) var failedDays: Set<Int> = []
+    @Published private(set) var conversations: [String: [PilotMessage]] = [:]
+    @Published var drafts: [String: String] = [:]
+    @Published private(set) var sendingLessonIds: Set<String> = []
+    @Published private(set) var failedLessonIds: Set<String> = []
 
     let configuration: PilotProjectConfiguration
     private let githubService: any PilotGitHubConnecting
@@ -32,10 +32,10 @@ final class PilotStore: ObservableObject {
         return !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    func canSend(day: Int) -> Bool {
-        isCopilotAvailable && hasAssignedProject && !sendingDays.contains(day)
-            && !(drafts[day] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && PilotLesson.weekOne.contains(where: { $0.id == day })
+    func canSend(lessonId: String) -> Bool {
+        isCopilotAvailable && hasAssignedProject && !sendingLessonIds.contains(lessonId)
+            && !(drafts[lessonId] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && PilotLesson.weekOne.contains(where: { $0.lessonId == lessonId })
     }
 
     func connect() async {
@@ -51,23 +51,22 @@ final class PilotStore: ObservableObject {
 
     func send() async {
         let lesson = course.currentLesson
-        let day = lesson.id
-        guard canSend(day: day), let project = github.state.session else { return }
-        let text = (drafts[day] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let history = conversations[day] ?? []
-        sendingDays.insert(day)
-        failedDays.remove(day)
-        defer { sendingDays.remove(day) }
+        let lessonId = lesson.lessonId
+        guard canSend(lessonId: lessonId), let project = github.state.session else { return }
+        let text = (drafts[lessonId] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let history = conversations[lessonId] ?? []
+        sendingLessonIds.insert(lessonId)
+        failedLessonIds.remove(lessonId)
+        defer { sendingLessonIds.remove(lessonId) }
         do {
             let reply = try await copilotService.send(PilotCopilotRequest(
                 lesson: lesson, project: project, message: text, history: history
             ))
-            // Publish only confirmed exchanges. Failed drafts remain retryable.
-            conversations[day, default: []].append(PilotMessage(role: .student, text: text))
-            conversations[day, default: []].append(PilotMessage(role: .assistant, text: reply))
-            drafts[day] = ""
+            conversations[lessonId, default: []].append(PilotMessage(role: .student, text: text))
+            conversations[lessonId, default: []].append(PilotMessage(role: .assistant, text: reply))
+            drafts[lessonId] = ""
         } catch {
-            failedDays.insert(day)
+            failedLessonIds.insert(lessonId)
         }
     }
 }
