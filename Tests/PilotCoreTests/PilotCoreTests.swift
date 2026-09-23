@@ -2,13 +2,36 @@ import XCTest
 @testable import PilotCore
 
 final class PilotCoreTests: XCTestCase {
-    func testWeekOneContainsThreeAvailableLessons() {
+    func testWeekOneContainsCanonicalEightLessons() {
         let week = PilotWeek.roadmap[0]
         XCTAssertFalse(week.isLocked)
-        XCTAssertEqual(week.lessons.map(\.id), [1, 2, 3])
-        XCTAssertEqual(week.lessons.map(\.titleKey), [
-            "pilot.day.1.title", "pilot.day.2.title", "pilot.day.3.title"
+        XCTAssertEqual(week.lessons.map(\.lessonId), [
+            "wk01-l00-intro",
+            "wk01-l01-computer-system",
+            "wk01-l02-os-input-output",
+            "wk01-l03-files-terminal",
+            "wk01-l04-hardware-usb",
+            "wk01-l05-engineering-method",
+            "wk01-l06-practice-device-internals",
+            "wk01-l07-practice-telebridge"
         ])
+        XCTAssertEqual(week.lessons.map(\.order), Array(0...7))
+    }
+
+    func testWeekOneHasExpectedLessonTypes() {
+        XCTAssertEqual(PilotLesson.weekOne.filter { $0.type == .intro }.count, 1)
+        XCTAssertEqual(PilotLesson.weekOne.filter { $0.type == .theory }.count, 5)
+        XCTAssertEqual(PilotLesson.weekOne.filter { $0.type == .practice }.count, 2)
+    }
+
+    func testAllPilotLessonsHaveGoogleDrivePDFURLs() {
+        for lesson in PilotLesson.weekOne {
+            let url = lesson.pdfURL
+            XCTAssertEqual(url?.scheme, "https")
+            XCTAssertEqual(url?.host, "drive.google.com")
+            XCTAssertTrue(url?.path.hasSuffix("/view") == true)
+            XCTAssertTrue(url?.path.contains(lesson.driveFileID) == true)
+        }
     }
 
     func testFutureWeeksAreLockedAndHaveNoLessons() {
@@ -17,38 +40,39 @@ final class PilotCoreTests: XCTestCase {
         XCTAssertTrue(future.allSatisfy { $0.isLocked && $0.lessons.isEmpty })
     }
 
-    func testStartsAtGitHubWithDayOneCurrent() {
+    func testStartsAtGitHubWithFirstLessonCurrent() {
         let state = PilotCourseState()
         XCTAssertEqual(state.selectedTab, .project)
+        XCTAssertEqual(state.currentLesson.lessonId, "wk01-l00-intro")
         XCTAssertEqual(state.status(for: PilotLesson.weekOne[0]), .current)
         XCTAssertEqual(state.status(for: PilotLesson.weekOne[1]), .available)
-        XCTAssertEqual(state.status(for: PilotLesson.weekOne[2]), .available)
     }
 
-    func testEachPilotDayCanOpenInCopilot() {
-        for day in 1...3 {
+    func testEachPilotLessonCanOpenInCopilot() {
+        for lesson in PilotLesson.weekOne {
             var state = PilotCourseState()
-            state.select(day: day)
-            XCTAssertEqual(state.currentLesson.id, day)
+            state.select(lessonId: lesson.lessonId)
+            XCTAssertEqual(state.currentLesson.lessonId, lesson.lessonId)
             XCTAssertEqual(state.selectedTab, .copilot)
         }
     }
 
-    func testInvalidDayDoesNotChangeNavigation() {
+    func testInvalidLessonDoesNotChangeNavigation() {
         var state = PilotCourseState()
-        for day in [-1, 0, 4, 8] { state.select(day: day) }
-        XCTAssertEqual(state.currentLesson.id, 1)
+        state.select(lessonId: "wk01-missing")
+        XCTAssertEqual(state.currentLesson.lessonId, "wk01-l00-intro")
         XCTAssertEqual(state.selectedTab, .project)
     }
 
     func testCompletionIsLocalAndDoesNotUnlockFutureWeeks() {
         var state = PilotCourseState()
-        state.select(day: 2)
+        let lesson = PilotLesson.weekOne[2]
+        state.select(lessonId: lesson.lessonId)
         state.markCurrentCompleted()
         state.markCurrentCompleted()
-        XCTAssertEqual(state.completedDays, [2])
-        XCTAssertEqual(state.status(for: PilotLesson.weekOne[1]), .completed)
-        XCTAssertTrue(PilotCourseState().completedDays.isEmpty)
+        XCTAssertEqual(state.completedLessonIds, [lesson.lessonId])
+        XCTAssertEqual(state.status(for: lesson), .completed)
+        XCTAssertTrue(PilotCourseState().completedLessonIds.isEmpty)
         XCTAssertTrue(PilotWeek.roadmap.dropFirst().allSatisfy(\.isLocked))
     }
 
@@ -91,7 +115,6 @@ final class PilotCoreTests: XCTestCase {
     }
 
     func testHTTPSURLPreservesPathAndFragment() {
-        // Reserved documentation domain: validation fixture only, never app config.
         let url = "https://example.org/student/site?preview=1#result"
         XCTAssertEqual(PilotProjectConfiguration(siteURLString: url).siteURL?.absoluteString, url)
     }
