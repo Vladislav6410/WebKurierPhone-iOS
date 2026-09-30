@@ -1,0 +1,51 @@
+name: WebKurierPilot
+options:
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: ru
+targets:
+  WebKurierPilot:
+    type: application
+    platform: iOS
+    sources:
+      - path: App/WebKurierPhoneApp.swift
+      - path: App/Pilot
+      - path: App/PilotCore
+      - path: App/Services/LocalizationManager.swift
+      - path: Resources/Localizations/Copilot.strings
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: WebKurier.Copilot.Pilot
+        PRODUCT_NAME: WebKurierPilot
+        SWIFT_VERSION: "5.0"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) PILOT_MVP"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: WebKurier Copilot
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        CODE_SIGNING_ALLOWED: NO
+  PilotStoreTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/PilotStoreTests
+    dependencies:
+      - target: WebKurierPilot
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: WebKurier.Copilot.Pilot.Tests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.0"
+        CODE_SIGNING_ALLOWED: NO
+schemes:
+  WebKurierPilot:
+    build:
+      targets:
+        WebKurierPilot: all
+    test:
+      targets:
+        - PilotStoreTests
