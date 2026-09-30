@@ -14,7 +14,8 @@ targets:
       - path: App/Services/LocalizationManager.swift
       - path: Resources/Localizations/Copilot.strings
         buildPhase: resources
-      - path: Resources/Education/Lessons/week01/lesson01
+      - path: Resources/Education
+        type: folder
         buildPhase: resources
     settings:
       base:
@@ -24,6 +25,7 @@ targets:
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) PILOT_MVP"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: WebKurier Copilot
+        GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         TARGETED_DEVICE_FAMILY: "1,2"
