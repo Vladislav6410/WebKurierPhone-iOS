@@ -164,6 +164,30 @@ final class PilotStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testCourseAndCopilotTaskPresentationUsesAssignmentAndPlaceholder() throws {
+        let store = PilotStore(githubService: UnavailablePilotGitHubService(),
+                               copilotService: UnavailablePilotCopilotService())
+        let strings = PilotStrings(language: "ru")
+        let lesson = try XCTUnwrap(PilotLesson.lesson(courseNumber: 1))
+        let canonical = try XCTUnwrap(store.canonicalLesson01)
+        let assignment = try XCTUnwrap(canonical.assignmentSection?.narration)
+        XCTAssertEqual(store.presentedCourseTask(for: lesson, strings: strings), assignment)
+        XCTAssertNotEqual(store.presentedCourseTask(for: lesson, strings: strings), canonical.title)
+
+        XCTAssertEqual(
+            store.presentedCourseTask(for: PilotLesson.introduction, strings: strings),
+            strings(PilotLesson.introduction.taskKey)
+        )
+        let other = try XCTUnwrap(PilotLesson.lesson(courseNumber: 2))
+        XCTAssertEqual(store.presentedCourseTask(for: other, strings: strings), strings(other.taskKey))
+        for number in [8, 9, 64] {
+            let slot = try XCTUnwrap(PilotLesson.lesson(courseNumber: number))
+            XCTAssertEqual(store.presentedCourseTask(for: slot, strings: strings),
+                           strings("pilot.lesson.slot.task"))
+        }
+    }
+
+    @MainActor
     private func makeStore(copilot: any PilotCopilotServing) -> PilotStore {
         PilotStore(githubService: TestGitHub(), copilotService: copilot)
     }

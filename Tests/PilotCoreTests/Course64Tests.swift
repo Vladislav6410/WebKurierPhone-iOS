@@ -66,6 +66,34 @@ final class Course64Tests: XCTestCase {
         XCTAssertTrue(later.allSatisfy { $0.linkState == .notConfigured && $0.pdfURL == nil && $0.driveFileID.isEmpty })
     }
 
+    func testCourseCompletionRequiresAll64NumberedLessons() {
+        var state = PilotCourseState()
+        XCTAssertFalse(state.isCourseComplete)
+        state.markCompleted(lessonId: PilotLesson.introduction.lessonId)
+        XCTAssertEqual(state.completedCount, 0)
+        XCTAssertFalse(state.isCourseComplete)
+
+        for lesson in PilotWeek.roadmap[7].lessons {
+            state.markCompleted(lessonId: lesson.lessonId)
+        }
+        XCTAssertEqual(state.completedCount, 8)
+        XCTAssertFalse(state.isCourseComplete)
+
+        var almostComplete = PilotCourseState()
+        for lesson in PilotLesson.numbered.dropLast() {
+            almostComplete.markCompleted(lessonId: lesson.lessonId)
+        }
+        XCTAssertEqual(almostComplete.completedCount, 63)
+        XCTAssertFalse(almostComplete.isCourseComplete)
+        almostComplete.markCompleted(lessonId: PilotLesson.numbered.last!.lessonId)
+        XCTAssertEqual(almostComplete.completedCount, 64)
+        XCTAssertTrue(almostComplete.isCourseComplete)
+        almostComplete.markCompleted(lessonId: PilotLesson.introduction.lessonId)
+        almostComplete.markCompleted(lessonId: PilotLesson.numbered.last!.lessonId)
+        XCTAssertEqual(almostComplete.completedCount, 64)
+        XCTAssertTrue(almostComplete.isCourseComplete)
+    }
+
     func testDocumentURLRejectsUnsafeSchemes() {
         XCTAssertTrue(PilotLesson.acceptsDocumentURL(URL(string: "https://drive.google.com/file/d/abc/view")!))
         XCTAssertFalse(PilotLesson.acceptsDocumentURL(URL(string: "http://drive.google.com/file/d/abc/view")!))

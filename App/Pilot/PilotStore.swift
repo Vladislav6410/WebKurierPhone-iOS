@@ -60,6 +60,11 @@ final class PilotStore: ObservableObject {
         )
     }
 
+    /// Assignment text shared by course cards and the Copilot screen.
+    func presentedCourseTask(for lesson: PilotLesson, strings: PilotStrings) -> String {
+        presentedTask(for: lesson, strings: strings)
+    }
+
     static func presentedTitle(for lesson: PilotLesson, canonical: CanonicalLesson?, localized: String) -> String {
         guard lesson.lessonId == canonicalPresentationLessonId,
               canonical?.lessonId == CanonicalLessonMapping.lesson01CanonicalId,

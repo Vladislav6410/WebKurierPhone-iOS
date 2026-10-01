@@ -118,7 +118,7 @@ private struct PilotCourseView: View {
                         .foregroundStyle(.secondary)
                 }
                 Text(lessonTitle(lesson)).font(.headline)
-                Text(lessonTask(lesson)).font(.subheadline)
+                Text(store.presentedCourseTask(for: lesson, strings: strings)).font(.subheadline)
                 HStack {
                     PilotPDFButton(lesson: lesson)
                     Button(strings("pilot.lesson.copilot")) {
@@ -138,11 +138,6 @@ private struct PilotCourseView: View {
     private func lessonTitle(_ lesson: PilotLesson) -> String {
         if lesson.courseNumber == nil { return strings("pilot.intro.title") }
         return String(format: strings("pilot.lesson.slot.title"), lesson.courseNumber ?? 0)
-    }
-
-    private func lessonTask(_ lesson: PilotLesson) -> String {
-        if lesson.taskKey == "pilot.lesson.slot.task" { return strings(lesson.taskKey) }
-        return store.presentedTitle(for: lesson, strings: strings)
     }
 
     private var strings: PilotStrings { PilotStrings(language: localization.currentLanguage) }
@@ -228,11 +223,6 @@ private struct PilotCopilotView: View {
         return String(format: strings("pilot.lesson.slot.title"), lesson.courseNumber ?? 0)
     }
 
-    private func lessonTask(_ lesson: PilotLesson) -> String {
-        if lesson.taskKey == "pilot.lesson.slot.task" { return strings(lesson.taskKey) }
-        return store.presentedTitle(for: lesson, strings: strings)
-    }
-
     private var lessonId: String { store.course.currentLesson.lessonId }
 
     var body: some View {
@@ -241,7 +231,7 @@ private struct PilotCopilotView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         Text(lessonTitle(store.course.currentLesson)).font(.title2.bold())
-                        Text(lessonTask(store.course.currentLesson))
+                        Text(store.presentedCourseTask(for: store.course.currentLesson, strings: strings))
                         PilotPDFButton(lesson: store.course.currentLesson)
 
                         Label(store.github.state.session?.repositoryName ?? strings("pilot.project.unassigned"),

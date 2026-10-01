@@ -166,7 +166,7 @@ struct PilotCourseState {
         return week.lessons.filter { completedLessonIds.contains($0.lessonId) }.count
     }
 
-    var isCourseComplete: Bool { completedCount(forWeek: 8) == 8 }
+    var isCourseComplete: Bool { completedCount == PilotLesson.numbered.count }
 
     mutating func select(lessonId: String) {
         guard let lesson = PilotLesson.all.first(where: { $0.lessonId == lessonId }) else { return }
