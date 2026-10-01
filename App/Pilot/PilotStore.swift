@@ -41,6 +41,43 @@ final class PilotStore: ObservableObject {
         return !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    /// Pilot card that presents the bundled canonical Lesson 01 package.
+    static let canonicalPresentationLessonId = "wk01-l01-computer-system"
+
+    func presentedTitle(for lesson: PilotLesson, strings: PilotStrings) -> String {
+        Self.presentedTitle(
+            for: lesson,
+            canonical: canonicalLesson01,
+            localized: strings(lesson.titleKey)
+        )
+    }
+
+    func presentedTask(for lesson: PilotLesson, strings: PilotStrings) -> String {
+        Self.presentedTask(
+            for: lesson,
+            canonical: canonicalLesson01,
+            localized: strings(lesson.taskKey)
+        )
+    }
+
+    static func presentedTitle(for lesson: PilotLesson, canonical: CanonicalLesson?, localized: String) -> String {
+        guard lesson.lessonId == canonicalPresentationLessonId,
+              let title = canonical?.title.trimmingCharacters(in: .whitespacesAndNewlines),
+              !title.isEmpty else {
+            return localized
+        }
+        return title
+    }
+
+    static func presentedTask(for lesson: PilotLesson, canonical: CanonicalLesson?, localized: String) -> String {
+        guard lesson.lessonId == canonicalPresentationLessonId,
+              let task = canonical?.assignmentSection?.narration.trimmingCharacters(in: .whitespacesAndNewlines),
+              !task.isEmpty else {
+            return localized
+        }
+        return task
+    }
+
     func canSend(lessonId: String) -> Bool {
         isCopilotAvailable && hasAssignedProject && !sendingLessonIds.contains(lessonId)
             && !(drafts[lessonId] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

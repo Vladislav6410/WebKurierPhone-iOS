@@ -128,8 +128,8 @@ private struct PilotCourseView: View {
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
-                                Text(strings(lesson.titleKey)).font(.headline)
-                                Text(strings(lesson.taskKey)).font(.subheadline)
+                                Text(store.presentedTitle(for: lesson, strings: strings)).font(.headline)
+                                Text(store.presentedTask(for: lesson, strings: strings)).font(.subheadline)
 
                                 HStack {
                                     PilotPDFButton(lesson: lesson)
@@ -211,8 +211,8 @@ private struct PilotCopilotView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        Text(strings(store.course.currentLesson.titleKey)).font(.title2.bold())
-                        Text(strings(store.course.currentLesson.taskKey))
+                        Text(store.presentedTitle(for: store.course.currentLesson, strings: strings)).font(.title2.bold())
+                        Text(store.presentedTask(for: store.course.currentLesson, strings: strings))
                         PilotPDFButton(lesson: store.course.currentLesson)
 
                         Label(store.github.state.session?.repositoryName ?? strings("pilot.project.unassigned"),
