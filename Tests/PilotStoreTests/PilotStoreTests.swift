@@ -140,7 +140,9 @@ final class PilotStoreTests: XCTestCase {
                                copilotService: UnavailablePilotCopilotService())
         let strings = PilotStrings(language: "ru")
         let lesson = try XCTUnwrap(PilotLesson.weekOne.first { $0.lessonId == lessonOne })
-        let introLesson = try XCTUnwrap(PilotLesson.weekOne.first { $0.lessonId == intro })
+        let introLesson = PilotLesson.introduction
+        XCTAssertEqual(introLesson.lessonId, intro)
+        XCTAssertNil(introLesson.courseNumber)
 
         XCTAssertNil(store.canonicalLesson01Error)
         let canonical = try XCTUnwrap(store.canonicalLesson01)
