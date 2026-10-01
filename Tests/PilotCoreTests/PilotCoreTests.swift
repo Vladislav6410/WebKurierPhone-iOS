@@ -4,8 +4,7 @@ import XCTest
 final class PilotCoreTests: XCTestCase {
     func testWeekOneContainsCanonicalEightLessons() {
         let week = PilotWeek.roadmap[0]
-        XCTAssertFalse(week.isLocked)
-        XCTAssertEqual(week.lessons.map(\.lessonId), [
+                XCTAssertEqual(week.lessons.map(\.lessonId), [
             "wk01-l00-intro",
             "wk01-l01-computer-system",
             "wk01-l02-os-input-output",
@@ -37,7 +36,7 @@ final class PilotCoreTests: XCTestCase {
     func testFutureWeeksAreLockedAndHaveNoLessons() {
         let future = Array(PilotWeek.roadmap.dropFirst())
         XCTAssertEqual(future.map(\.id), Array(2...8))
-        XCTAssertTrue(future.allSatisfy { $0.isLocked && $0.lessons.count == 8 })
+        XCTAssertTrue(future.allSatisfy { $0.lessons.count == 8 })
     }
 
     func testStartsAtGitHubWithFirstLessonCurrent() {
@@ -64,7 +63,7 @@ final class PilotCoreTests: XCTestCase {
         XCTAssertEqual(state.selectedTab, .project)
     }
 
-    func testCompletionIsLocalAndDoesNotUnlockFutureWeeks() {
+    func testCompletionIsLocalAndDoesNotControlAccess() {
         var state = PilotCourseState()
         let lesson = PilotLesson.weekOne[2]
         state.select(lessonId: lesson.lessonId)
@@ -73,8 +72,8 @@ final class PilotCoreTests: XCTestCase {
         XCTAssertEqual(state.completedLessonIds, [lesson.lessonId])
         XCTAssertEqual(state.status(for: lesson), .completed)
         XCTAssertTrue(PilotCourseState().completedLessonIds.isEmpty)
-        XCTAssertTrue(PilotWeek.roadmap.dropFirst().allSatisfy(\.isLocked))
-        XCTAssertFalse(state.isWeekUnlocked(2))
+        state.select(lessonId: PilotWeek.roadmap[7].lessons[7].lessonId)
+        XCTAssertEqual(state.currentLesson.courseNumber, 64)
     }
 
     func testGitHubConnectingConnectedAndDuplicateSuppression() {

@@ -16,6 +16,25 @@ final class Course64Tests: XCTestCase {
         }
     }
 
+    func testAllLessonsAreSelectableWithoutCompletion() throws {
+        var state = PilotCourseState()
+        for number in [1, 9, 32, 64] {
+            let lesson = try XCTUnwrap(PilotLesson.lesson(courseNumber: number))
+            state.select(lessonId: lesson.lessonId)
+            XCTAssertEqual(state.currentLesson.courseNumber, number)
+            XCTAssertTrue(state.completedLessonIds.isEmpty)
+        }
+    }
+
+    func testCompletionDoesNotControlAccess() throws {
+        var state = PilotCourseState()
+        state.markCompleted(lessonId: PilotLesson.weekOne[0].lessonId)
+        XCTAssertEqual(state.completedCount, 1)
+        state.select(lessonId: try XCTUnwrap(PilotLesson.lesson(courseNumber: 64)).lessonId)
+        XCTAssertEqual(state.currentLesson.courseNumber, 64)
+        XCTAssertFalse(state.completedLessonIds.contains(state.currentLesson.lessonId))
+    }
+
     func testWeekOneKeepsVerifiedDriveLinksAndCanonicalLesson01() {
         XCTAssertEqual(PilotLesson.weekOne.map(\.driveFileID), [
             "1ulIXKzbicd67C6tE4JCmvPm3YD_pHmmA",
@@ -46,44 +65,5 @@ final class Course64Tests: XCTestCase {
         XCTAssertFalse(PilotLesson.acceptsDocumentURL(URL(string: "javascript:alert(1)")!))
         XCTAssertFalse(PilotLesson.acceptsDocumentURL(URL(string: "file:///tmp/lesson.pdf")!))
         XCTAssertFalse(PilotLesson.acceptsDocumentURL(URL(string: "data:text/html,hi")!))
-    }
-
-    func testProgressionUnlocksNextWeekOnlyAtEightOfEight() {
-        var state = PilotCourseState()
-        XCTAssertTrue(state.isWeekUnlocked(1))
-        XCTAssertFalse(state.isWeekUnlocked(2))
-        XCTAssertFalse(state.isWeekUnlocked(3))
-        for lesson in PilotLesson.weekOne.dropLast() {
-            state.markCompleted(lessonId: lesson.lessonId)
-        }
-        XCTAssertEqual(state.completedCount(forWeek: 1), 7)
-        XCTAssertFalse(state.isWeekUnlocked(2))
-        state.markCompleted(lessonId: PilotLesson.weekOne.last!.lessonId)
-        XCTAssertTrue(state.isWeekUnlocked(2))
-        XCTAssertFalse(state.isWeekUnlocked(3))
-        XCTAssertFalse(state.isCourseComplete)
-    }
-
-    func testOpeningLessonDoesNotCompleteItAndWeekEightCompletionFinishesCourse() {
-        var state = PilotCourseState()
-        state.select(lessonId: PilotLesson.weekOne[0].lessonId)
-        XCTAssertTrue(state.completedLessonIds.isEmpty)
-        for week in PilotWeek.roadmap {
-            for lesson in week.lessons {
-                state.markCompleted(lessonId: lesson.lessonId)
-            }
-        }
-        XCTAssertEqual(state.completedLessonIds.count, 64)
-        XCTAssertTrue(state.isWeekUnlocked(8))
-        XCTAssertTrue(state.isCourseComplete)
-    }
-
-    func testLockedWeekCannotBeSelectedOrCompleted() {
-        var state = PilotCourseState()
-        let lesson = PilotWeek.roadmap[1].lessons[0]
-        state.select(lessonId: lesson.lessonId)
-        XCTAssertEqual(state.currentLesson.lessonId, PilotLesson.weekOne[0].lessonId)
-        state.markCompleted(lessonId: lesson.lessonId)
-        XCTAssertFalse(state.completedLessonIds.contains(lesson.lessonId))
     }
 }

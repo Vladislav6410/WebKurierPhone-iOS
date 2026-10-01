@@ -67,8 +67,9 @@
 "pilot.lesson.read" = "Читать урок";
 "pilot.lesson.slot.title" = "Урок %d";
 "pilot.lesson.slot.task" = "Материал этого урока ещё не добавлен.";
-"pilot.pdf.unconfigured" = "PDF урока ещё не настроен.";
+"pilot.pdf.unconfigured" = "Материал готовится";
 "pilot.week.progress" = "%d / %d";
 "pilot.week.locked" = "Заблокировано";
 "pilot.week.available" = "Доступно";
 "pilot.course.complete" = "Курс пройден";
+"pilot.course.progress" = "%d / 64 пройдено";

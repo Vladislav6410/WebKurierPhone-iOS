@@ -120,9 +120,6 @@ struct PilotWeek: Identifiable, Equatable {
     let id: Int
     let lessons: [PilotLesson]
 
-    /// Initial lock only. Runtime unlock is completion-based on PilotCourseState.
-    var isLocked: Bool { id != 1 }
-
     static let roadmap: [PilotWeek] = (1...8).map { weekNumber in
         let lessons: [PilotLesson]
         if weekNumber == 1 {
@@ -153,11 +150,7 @@ struct PilotCourseState {
     private(set) var completedLessonIds: Set<String> = []
     var selectedTab: PilotTab = .project
 
-    func isWeekUnlocked(_ weekNumber: Int) -> Bool {
-        guard (1...8).contains(weekNumber) else { return false }
-        if weekNumber == 1 { return true }
-        return completedCount(forWeek: weekNumber - 1) == 8
-    }
+    var completedCount: Int { completedLessonIds.count }
 
     func completedCount(forWeek weekNumber: Int) -> Int {
         guard let week = PilotWeek.roadmap.first(where: { $0.id == weekNumber }) else { return 0 }
@@ -167,8 +160,7 @@ struct PilotCourseState {
     var isCourseComplete: Bool { completedCount(forWeek: 8) == 8 }
 
     mutating func select(lessonId: String) {
-        guard let lesson = PilotLesson.all.first(where: { $0.lessonId == lessonId }),
-              isWeekUnlocked(lesson.weekNumber) else { return }
+        guard let lesson = PilotLesson.all.first(where: { $0.lessonId == lessonId }) else { return }
         currentLesson = lesson
         selectedTab = .copilot
     }
@@ -178,9 +170,8 @@ struct PilotCourseState {
     }
 
     mutating func markCompleted(lessonId: String) {
-        guard let lesson = PilotLesson.all.first(where: { $0.lessonId == lessonId }),
-              isWeekUnlocked(lesson.weekNumber) else { return }
-        completedLessonIds.insert(lesson.lessonId)
+        guard PilotLesson.all.contains(where: { $0.lessonId == lessonId }) else { return }
+        completedLessonIds.insert(lessonId)
     }
 
     func status(for lesson: PilotLesson) -> PilotLessonStatus {

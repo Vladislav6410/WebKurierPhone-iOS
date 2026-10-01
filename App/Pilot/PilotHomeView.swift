@@ -136,15 +136,12 @@ private struct PilotCourseView: View {
     }
 
     private func lessonTitle(_ lesson: PilotLesson) -> String {
-        if lesson.titleKey == "pilot.lesson.slot.title" {
-            return String(format: strings(lesson.titleKey), lesson.courseNumber)
-        }
-        return store.presentedTitle(for: lesson, strings: strings)
+        String(format: strings("pilot.lesson.slot.title"), lesson.courseNumber)
     }
 
     private func lessonTask(_ lesson: PilotLesson) -> String {
         if lesson.taskKey == "pilot.lesson.slot.task" { return strings(lesson.taskKey) }
-        return store.presentedTask(for: lesson, strings: strings)
+        return store.presentedTitle(for: lesson, strings: strings)
     }
 
     private var strings: PilotStrings { PilotStrings(language: localization.currentLanguage) }
@@ -157,26 +154,15 @@ private struct PilotCourseView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     Text(strings("pilot.progress.note")).font(.footnote).foregroundStyle(.secondary)
-                    if store.course.isCourseComplete {
-                        Text(strings("pilot.course.complete")).font(.headline)
-                    }
+                    Text(String(format: strings("pilot.course.progress"), store.course.completedCount))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
 
                     ForEach(PilotWeek.roadmap) { week in
-                        let unlocked = store.course.isWeekUnlocked(week.id)
                         VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text(String(format: strings("pilot.week.format"), week.id)).font(.title3.bold())
-                                Spacer()
-                                Text(String(format: strings("pilot.week.progress"), store.course.completedCount(forWeek: week.id), week.lessons.count))
-                                    .font(.subheadline)
-                            }
-                            Text(unlocked ? strings("pilot.week.available") : strings("pilot.week.locked"))
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                            if unlocked {
-                                ForEach(week.lessons) { lesson in
-                                    lessonCard(lesson)
-                                }
+                            Text(String(format: strings("pilot.week.format"), week.id)).font(.title3.bold())
+                            ForEach(week.lessons) { lesson in
+                                lessonCard(lesson)
                             }
                         }
                     }
@@ -234,15 +220,12 @@ private struct PilotCopilotView: View {
     private var strings: PilotStrings { PilotStrings(language: localization.currentLanguage) }
 
     private func lessonTitle(_ lesson: PilotLesson) -> String {
-        if lesson.titleKey == "pilot.lesson.slot.title" {
-            return String(format: strings(lesson.titleKey), lesson.courseNumber)
-        }
-        return store.presentedTitle(for: lesson, strings: strings)
+        String(format: strings("pilot.lesson.slot.title"), lesson.courseNumber)
     }
 
     private func lessonTask(_ lesson: PilotLesson) -> String {
         if lesson.taskKey == "pilot.lesson.slot.task" { return strings(lesson.taskKey) }
-        return store.presentedTask(for: lesson, strings: strings)
+        return store.presentedTitle(for: lesson, strings: strings)
     }
 
     private var lessonId: String { store.course.currentLesson.lessonId }
