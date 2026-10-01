@@ -121,9 +121,17 @@ final class PilotStoreTests: XCTestCase {
         )
         let lesson = try CanonicalLessonLoader().loadLesson01(from: Bundle.main)
         XCTAssertEqual(url.lastPathComponent, "lesson.json")
-        XCTAssertEqual(lesson.lessonId, "week01.lesson01.computer-as-system")
+        XCTAssertEqual(lesson.lessonId, CanonicalLessonMapping.lesson01CanonicalId)
         XCTAssertEqual(lesson.title, "Компьютер как система")
         XCTAssertNotNil(lesson.assignmentSection)
+        for name in ["visuals.json", "lesson01_ru_tts.txt"] {
+            let resource = name.split(separator: ".").dropLast().joined(separator: ".")
+            let ext = name.split(separator: ".").last.map(String.init)
+            XCTAssertNotNil(
+                Bundle.main.url(forResource: resource, withExtension: ext, subdirectory: CanonicalLessonLoader.lesson01Subdirectory),
+                "missing \(name)"
+            )
+        }
     }
 
     @MainActor
