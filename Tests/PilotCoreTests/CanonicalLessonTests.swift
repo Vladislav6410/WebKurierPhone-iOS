@@ -128,29 +128,22 @@ final class CanonicalLessonTests: XCTestCase {
         XCTAssertNil(CanonicalLessonMapping.canonicalId(forPilotLessonId: other.lessonId))
     }
 
-    private func mutatedLesson(_ mutate: (inout [String: Any]) -> Void) throws -> CanonicalLesson {
-        let directory = try packageCopy(mutate)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        return try CanonicalLessonLoader().load(from: directory.appendingPathComponent("lesson.json"))
-    }
-
     private func loadMutatedPackage(_ mutate: (inout [String: Any]) -> Void) throws -> CanonicalLesson {
-        try mutatedLesson(mutate)
+        let directory = try packageCopy()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("lesson.json")
+        var object = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as! [String: Any]
+        mutate(&object)
+        try JSONSerialization.data(withJSONObject: object).write(to: url)
+        return try CanonicalLessonLoader().load(from: url)
     }
 
-    private func packageCopy(_ mutate: (@escaping (inout [String: Any]) -> Void)? = nil) throws -> URL {
+    private func packageCopy() throws -> URL {
         let source = canonicalLessonURL.deletingLastPathComponent()
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         for name in ["lesson.json", "visuals.json", "lesson01_ru_tts.txt"] {
             try FileManager.default.copyItem(at: source.appendingPathComponent(name), to: directory.appendingPathComponent(name))
-        }
-        if let mutate {
-            let url = directory.appendingPathComponent("lesson.json")
-            var object = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as! [String: Any]
-            mutate(&object)
-            let data = try JSONSerialization.data(withJSONObject: object)
-            try data.write(to: url)
         }
         return directory
     }
