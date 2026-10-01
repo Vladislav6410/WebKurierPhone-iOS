@@ -115,7 +115,7 @@ final class CanonicalLessonTests: XCTestCase {
         }
     }
 
-    func testPilotLesson01MapsOnlyToCanonicalLesson01() {
+    func testPilotLesson01MapsOnlyToCanonicalLesson01() throws {
         XCTAssertEqual(
             CanonicalLessonMapping.canonicalId(forPilotLessonId: CanonicalLessonMapping.lesson01PilotId),
             CanonicalLessonMapping.lesson01CanonicalId
@@ -138,7 +138,7 @@ final class CanonicalLessonTests: XCTestCase {
         try mutatedLesson(mutate)
     }
 
-    private func packageCopy(_ mutate: ((inout [String: Any]) -> Void)? = nil) throws -> URL {
+    private func packageCopy(_ mutate: (@escaping (inout [String: Any]) -> Void)? = nil) throws -> URL {
         let source = canonicalLessonURL.deletingLastPathComponent()
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
