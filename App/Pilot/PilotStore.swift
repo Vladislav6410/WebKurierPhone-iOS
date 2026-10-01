@@ -42,7 +42,7 @@ final class PilotStore: ObservableObject {
     }
 
     /// Pilot card that presents the bundled canonical Lesson 01 package.
-    static let canonicalPresentationLessonId = "wk01-l01-computer-system"
+    static let canonicalPresentationLessonId = CanonicalLessonMapping.lesson01PilotId
 
     func presentedTitle(for lesson: PilotLesson, strings: PilotStrings) -> String {
         Self.presentedTitle(
@@ -62,6 +62,7 @@ final class PilotStore: ObservableObject {
 
     static func presentedTitle(for lesson: PilotLesson, canonical: CanonicalLesson?, localized: String) -> String {
         guard lesson.lessonId == canonicalPresentationLessonId,
+              canonical?.lessonId == CanonicalLessonMapping.lesson01CanonicalId,
               let title = canonical?.title.trimmingCharacters(in: .whitespacesAndNewlines),
               !title.isEmpty else {
             return localized
@@ -71,6 +72,7 @@ final class PilotStore: ObservableObject {
 
     static func presentedTask(for lesson: PilotLesson, canonical: CanonicalLesson?, localized: String) -> String {
         guard lesson.lessonId == canonicalPresentationLessonId,
+              canonical?.lessonId == CanonicalLessonMapping.lesson01CanonicalId,
               let task = canonical?.assignmentSection?.narration.trimmingCharacters(in: .whitespacesAndNewlines),
               !task.isEmpty else {
             return localized
