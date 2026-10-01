@@ -37,7 +37,7 @@ final class PilotCoreTests: XCTestCase {
     func testFutureWeeksAreLockedAndHaveNoLessons() {
         let future = Array(PilotWeek.roadmap.dropFirst())
         XCTAssertEqual(future.map(\.id), Array(2...8))
-        XCTAssertTrue(future.allSatisfy { $0.isLocked && $0.lessons.isEmpty })
+        XCTAssertTrue(future.allSatisfy { $0.isLocked && $0.lessons.count == 8 })
     }
 
     func testStartsAtGitHubWithFirstLessonCurrent() {
@@ -74,6 +74,7 @@ final class PilotCoreTests: XCTestCase {
         XCTAssertEqual(state.status(for: lesson), .completed)
         XCTAssertTrue(PilotCourseState().completedLessonIds.isEmpty)
         XCTAssertTrue(PilotWeek.roadmap.dropFirst().allSatisfy(\.isLocked))
+        XCTAssertFalse(state.isWeekUnlocked(2))
     }
 
     func testGitHubConnectingConnectedAndDuplicateSuppression() {

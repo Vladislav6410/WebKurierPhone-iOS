@@ -81,7 +81,7 @@ final class PilotStore: ObservableObject {
     func canSend(lessonId: String) -> Bool {
         isCopilotAvailable && hasAssignedProject && !sendingLessonIds.contains(lessonId)
             && !(drafts[lessonId] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && PilotLesson.weekOne.contains(where: { $0.lessonId == lessonId })
+            && PilotLesson.all.contains(where: { $0.lessonId == lessonId })
     }
 
     func connect() async {

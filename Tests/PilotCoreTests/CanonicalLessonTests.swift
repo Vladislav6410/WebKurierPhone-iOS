@@ -54,6 +54,6 @@ final class CanonicalLessonTests: XCTestCase {
 
         let futureWeeks = Array(PilotWeek.roadmap.dropFirst())
         XCTAssertEqual(futureWeeks.map(\.id), Array(2...8))
-        XCTAssertTrue(futureWeeks.allSatisfy { $0.isLocked && $0.lessons.isEmpty })
+        XCTAssertTrue(futureWeeks.allSatisfy { $0.isLocked && $0.lessons.count == 8 })
     }
 }

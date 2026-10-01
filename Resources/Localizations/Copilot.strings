@@ -63,3 +63,12 @@
 "pilot.result" = "Посмотреть результат на сайте";
 "pilot.result.unconfigured" = "Адрес учебного сайта ещё не настроен.";
 "pilot.result.failed" = "Не удалось открыть браузер. Попробуй ещё раз.";
+
+"pilot.lesson.read" = "Читать урок";
+"pilot.lesson.slot.title" = "Урок %d";
+"pilot.lesson.slot.task" = "Материал этого урока ещё не добавлен.";
+"pilot.pdf.unconfigured" = "PDF урока ещё не настроен.";
+"pilot.week.progress" = "%d / %d";
+"pilot.week.locked" = "Заблокировано";
+"pilot.week.available" = "Доступно";
+"pilot.course.complete" = "Курс пройден";

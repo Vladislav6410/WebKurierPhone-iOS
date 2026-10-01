@@ -30,6 +30,7 @@ struct PilotHomeView: View {
 private struct PilotProjectView: View {
     @EnvironmentObject private var store: PilotStore
     @EnvironmentObject private var localization: LocalizationManager
+
     private var strings: PilotStrings { PilotStrings(language: localization.currentLanguage) }
 
     var body: some View {
@@ -104,61 +105,83 @@ private struct PilotProjectView: View {
 private struct PilotCourseView: View {
     @EnvironmentObject private var store: PilotStore
     @EnvironmentObject private var localization: LocalizationManager
+    private func lessonCard(_ lesson: PilotLesson) -> some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text(strings(lesson.type.titleKey))
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(strings(store.course.status(for: lesson).titleKey))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Text(lessonTitle(lesson)).font(.headline)
+                Text(lessonTask(lesson)).font(.subheadline)
+                HStack {
+                    PilotPDFButton(lesson: lesson)
+                    Button(strings("pilot.lesson.copilot")) {
+                        store.course.select(lessonId: lesson.lessonId)
+                    }
+                    .buttonStyle(.bordered)
+                    Button(strings("pilot.lesson.complete")) {
+                        store.course.markCompleted(lessonId: lesson.lessonId)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func lessonTitle(_ lesson: PilotLesson) -> String {
+        if lesson.titleKey == "pilot.lesson.slot.title" {
+            return String(format: strings(lesson.titleKey), lesson.courseNumber)
+        }
+        return store.presentedTitle(for: lesson, strings: strings)
+    }
+
+    private func lessonTask(_ lesson: PilotLesson) -> String {
+        if lesson.taskKey == "pilot.lesson.slot.task" { return strings(lesson.taskKey) }
+        return store.presentedTask(for: lesson, strings: strings)
+    }
+
     private var strings: PilotStrings { PilotStrings(language: localization.currentLanguage) }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text(strings("pilot.weekOne")).font(.title2.bold())
                     Label(strings("pilot.drive.testMode"), systemImage: "testtube.2")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     Text(strings("pilot.progress.note")).font(.footnote).foregroundStyle(.secondary)
+                    if store.course.isCourseComplete {
+                        Text(strings("pilot.course.complete")).font(.headline)
+                    }
 
-                    ForEach(PilotLesson.weekOne) { lesson in
-                        GroupBox {
-                            VStack(alignment: .leading, spacing: 12) {
-                                HStack {
-                                    Text(strings(lesson.type.titleKey))
-                                        .font(.caption.bold())
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                    Text(strings(store.course.status(for: lesson).titleKey))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Text(store.presentedTitle(for: lesson, strings: strings)).font(.headline)
-                                Text(store.presentedTask(for: lesson, strings: strings)).font(.subheadline)
-
-                                HStack {
-                                    PilotPDFButton(lesson: lesson)
-                                    Button(strings("pilot.lesson.copilot")) {
-                                        store.course.select(lessonId: lesson.lessonId)
-                                    }
-                                    .buttonStyle(.bordered)
+                    ForEach(PilotWeek.roadmap) { week in
+                        let unlocked = store.course.isWeekUnlocked(week.id)
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text(String(format: strings("pilot.week.format"), week.id)).font(.title3.bold())
+                                Spacer()
+                                Text(String(format: strings("pilot.week.progress"), store.course.completedCount(forWeek: week.id), week.lessons.count))
+                                    .font(.subheadline)
+                            }
+                            Text(unlocked ? strings("pilot.week.available") : strings("pilot.week.locked"))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            if unlocked {
+                                ForEach(week.lessons) { lesson in
+                                    lessonCard(lesson)
                                 }
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
 
                     PilotResultButton()
-
-                    Text(strings("pilot.roadmap")).font(.title2.bold())
-                    ForEach(PilotWeek.roadmap.filter(\.isLocked)) { week in
-                        HStack(alignment: .top) {
-                            Image(systemName: "lock.fill").accessibilityHidden(true)
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(String(format: strings("pilot.week.format"), week.id)).font(.headline)
-                                Text(strings("pilot.locked")).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                        }
-                        .padding()
-                        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
-                        .accessibilityElement(children: .combine)
-                    }
                 }
                 .padding()
             }
@@ -177,18 +200,23 @@ private struct PilotPDFButton: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Button {
-                guard let url = lesson.pdfURL else {
-                    openFailed = true
-                    return
+            if let url = lesson.pdfURL, PilotLesson.acceptsDocumentURL(url) {
+                Button {
+                    openURL(url) { accepted in
+                        openFailed = !accepted
+                    }
+                } label: {
+                    Label(strings("pilot.lesson.read"), systemImage: "doc.richtext")
                 }
-                openURL(url) { accepted in
-                    openFailed = !accepted
-                }
-            } label: {
-                Label(strings("pilot.pdf.open"), systemImage: "doc.richtext")
+                .buttonStyle(.borderedProminent)
+            } else {
+                Button(strings("pilot.lesson.read")) {}
+                    .buttonStyle(.bordered)
+                    .disabled(true)
+                Text(strings("pilot.pdf.unconfigured"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .buttonStyle(.borderedProminent)
 
             if openFailed {
                 Text(strings("pilot.pdf.failed"))
@@ -204,6 +232,19 @@ private struct PilotCopilotView: View {
     @EnvironmentObject private var store: PilotStore
     @EnvironmentObject private var localization: LocalizationManager
     private var strings: PilotStrings { PilotStrings(language: localization.currentLanguage) }
+
+    private func lessonTitle(_ lesson: PilotLesson) -> String {
+        if lesson.titleKey == "pilot.lesson.slot.title" {
+            return String(format: strings(lesson.titleKey), lesson.courseNumber)
+        }
+        return store.presentedTitle(for: lesson, strings: strings)
+    }
+
+    private func lessonTask(_ lesson: PilotLesson) -> String {
+        if lesson.taskKey == "pilot.lesson.slot.task" { return strings(lesson.taskKey) }
+        return store.presentedTask(for: lesson, strings: strings)
+    }
+
     private var lessonId: String { store.course.currentLesson.lessonId }
 
     var body: some View {
@@ -211,8 +252,8 @@ private struct PilotCopilotView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        Text(store.presentedTitle(for: store.course.currentLesson, strings: strings)).font(.title2.bold())
-                        Text(store.presentedTask(for: store.course.currentLesson, strings: strings))
+                        Text(lessonTitle(store.course.currentLesson)).font(.title2.bold())
+                        Text(lessonTask(store.course.currentLesson))
                         PilotPDFButton(lesson: store.course.currentLesson)
 
                         Label(store.github.state.session?.repositoryName ?? strings("pilot.project.unassigned"),
