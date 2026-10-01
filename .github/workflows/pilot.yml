@@ -1,7 +1,7 @@
 name: Pilot validation
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feat/student-week01-drive-links-ios]
     paths:
       - 'App/Pilot/**'
       - 'App/PilotCore/**'

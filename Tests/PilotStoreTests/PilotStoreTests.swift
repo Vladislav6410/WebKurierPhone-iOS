@@ -2,6 +2,9 @@ import XCTest
 @testable import WebKurierPilot
 
 final class PilotStoreTests: XCTestCase {
+    private let intro = "wk01-l00-intro"
+    private let lessonOne = "wk01-l01-computer-system"
+
     @MainActor
     func testUnconfiguredConnectionShowsErrorAndStaysOnProject() async {
         let store = PilotStore(githubService: UnavailablePilotGitHubService(),
@@ -9,10 +12,10 @@ final class PilotStoreTests: XCTestCase {
         await store.connect()
         XCTAssertEqual(store.github.state, .error(.notConfigured))
         XCTAssertEqual(store.course.selectedTab, .project)
-        store.drafts[1] = "Change the title"
-        XCTAssertFalse(store.canSend(day: 1))
+        store.drafts[intro] = "Question"
+        XCTAssertFalse(store.canSend(lessonId: intro))
         await store.send()
-        XCTAssertEqual(store.drafts[1], "Change the title")
+        XCTAssertEqual(store.drafts[intro], "Question")
         XCTAssertTrue(store.conversations.isEmpty)
     }
 
@@ -22,8 +25,8 @@ final class PilotStoreTests: XCTestCase {
         await store.connect()
         XCTAssertEqual(store.github.state.session?.login, "test-student")
         XCTAssertEqual(store.course.selectedTab, .course)
-        store.drafts[1] = " \n "
-        XCTAssertFalse(store.canSend(day: 1))
+        store.drafts[intro] = " \n "
+        XCTAssertFalse(store.canSend(lessonId: intro))
     }
 
     @MainActor
@@ -34,9 +37,9 @@ final class PilotStoreTests: XCTestCase {
         await github.waitUntilStarted()
         github.complete()
         await pending.value
-        store.drafts[1] = "Change the title"
+        store.drafts[intro] = "Question"
         XCTAssertNotNil(store.github.state.session)
-        XCTAssertFalse(store.canSend(day: 1))
+        XCTAssertFalse(store.canSend(lessonId: intro))
     }
 
     @MainActor
@@ -54,26 +57,29 @@ final class PilotStoreTests: XCTestCase {
     }
 
     @MainActor
-    func testReplyStaysInOriginalDayWhenStudentNavigates() async {
+    func testReplyStaysInOriginalLessonWhenStudentNavigates() async {
         let service = DeferredCopilot()
         let store = makeStore(copilot: service)
         await store.connect()
-        store.drafts[1] = "Change the title"
+        store.drafts[intro] = "Intro question"
         let pending = Task { await store.send() }
         await service.waitUntilStarted()
-        XCTAssertFalse(store.canSend(day: 1))
+        XCTAssertFalse(store.canSend(lessonId: intro))
         await store.send()
         XCTAssertEqual(service.calls, 1)
-        store.course.select(day: 2)
-        store.drafts[2] = "Day two draft"
+
+        store.course.select(lessonId: lessonOne)
+        store.drafts[lessonOne] = "Lesson one draft"
+
         service.complete(.success("Confirmed test response"))
         await pending.value
-        XCTAssertEqual(store.conversations[1]?.map(\.text), ["Change the title", "Confirmed test response"])
-        XCTAssertNil(store.conversations[2])
-        XCTAssertEqual(store.drafts[2], "Day two draft")
-        XCTAssertEqual(service.request?.lesson.id, 1)
+
+        XCTAssertEqual(store.conversations[intro]?.map(\.text), ["Intro question", "Confirmed test response"])
+        XCTAssertNil(store.conversations[lessonOne])
+        XCTAssertEqual(store.drafts[lessonOne], "Lesson one draft")
+        XCTAssertEqual(service.request?.lesson.lessonId, intro)
         XCTAssertEqual(service.request?.project.repositoryName, "test-student/training")
-        XCTAssertTrue(store.sendingDays.isEmpty)
+        XCTAssertTrue(store.sendingLessonIds.isEmpty)
     }
 
     @MainActor
@@ -81,22 +87,26 @@ final class PilotStoreTests: XCTestCase {
         let service = DeferredCopilot()
         let store = makeStore(copilot: service)
         await store.connect()
-        store.drafts[1] = "Change the title"
+        store.drafts[intro] = "Question"
+
         let first = Task { await store.send() }
         await service.waitUntilStarted()
         service.complete(.failure(PilotServiceError.failed))
         await first.value
-        XCTAssertEqual(store.drafts[1], "Change the title")
+
+        XCTAssertEqual(store.drafts[intro], "Question")
         XCTAssertTrue(store.conversations.isEmpty)
-        XCTAssertTrue(store.failedDays.contains(1))
-        XCTAssertTrue(store.canSend(day: 1))
+        XCTAssertTrue(store.failedLessonIds.contains(intro))
+        XCTAssertTrue(store.canSend(lessonId: intro))
+
         let retry = Task { await store.send() }
         await service.waitUntilStarted()
         service.complete(.success("Confirmed test response"))
         await retry.value
-        XCTAssertEqual(store.conversations[1]?.count, 2)
-        XCTAssertEqual(store.drafts[1], "")
-        XCTAssertTrue(store.failedDays.isEmpty)
+
+        XCTAssertEqual(store.conversations[intro]?.count, 2)
+        XCTAssertEqual(store.drafts[intro], "")
+        XCTAssertTrue(store.failedLessonIds.isEmpty)
     }
 
     @MainActor

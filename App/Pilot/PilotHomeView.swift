@@ -111,23 +111,40 @@ private struct PilotCourseView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Text(strings("pilot.weekOne")).font(.title2.bold())
-                    Label(strings("pilot.status.available"), systemImage: "checkmark.circle")
+                    Label(strings("pilot.drive.testMode"), systemImage: "testtube.2")
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                     Text(strings("pilot.progress.note")).font(.footnote).foregroundStyle(.secondary)
+
                     ForEach(PilotLesson.weekOne) { lesson in
                         GroupBox {
                             VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Text(strings(lesson.type.titleKey))
+                                        .font(.caption.bold())
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Text(strings(store.course.status(for: lesson).titleKey))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                                 Text(strings(lesson.titleKey)).font(.headline)
-                                Text(strings(store.course.status(for: lesson).titleKey))
-                                    .font(.caption).foregroundStyle(.secondary)
-                                Text(strings(lesson.taskKey))
-                                Button(strings("pilot.lesson.open")) { store.course.select(day: lesson.id) }
-                                    .buttonStyle(.borderedProminent)
+                                Text(strings(lesson.taskKey)).font(.subheadline)
+
+                                HStack {
+                                    PilotPDFButton(lesson: lesson)
+                                    Button(strings("pilot.lesson.copilot")) {
+                                        store.course.select(lessonId: lesson.lessonId)
+                                    }
+                                    .buttonStyle(.bordered)
+                                }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
+
                     PilotResultButton()
+
                     Text(strings("pilot.roadmap")).font(.title2.bold())
                     ForEach(PilotWeek.roadmap.filter(\.isLocked)) { week in
                         HStack(alignment: .top) {
@@ -151,11 +168,43 @@ private struct PilotCourseView: View {
 }
 
 @MainActor
+private struct PilotPDFButton: View {
+    let lesson: PilotLesson
+    @EnvironmentObject private var localization: LocalizationManager
+    @Environment(\.openURL) private var openURL
+    @State private var openFailed = false
+    private var strings: PilotStrings { PilotStrings(language: localization.currentLanguage) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Button {
+                guard let url = lesson.pdfURL else {
+                    openFailed = true
+                    return
+                }
+                openURL(url) { accepted in
+                    openFailed = !accepted
+                }
+            } label: {
+                Label(strings("pilot.pdf.open"), systemImage: "doc.richtext")
+            }
+            .buttonStyle(.borderedProminent)
+
+            if openFailed {
+                Text(strings("pilot.pdf.failed"))
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        }
+    }
+}
+
+@MainActor
 private struct PilotCopilotView: View {
     @EnvironmentObject private var store: PilotStore
     @EnvironmentObject private var localization: LocalizationManager
     private var strings: PilotStrings { PilotStrings(language: localization.currentLanguage) }
-    private var day: Int { store.course.currentLesson.id }
+    private var lessonId: String { store.course.currentLesson.lessonId }
 
     var body: some View {
         NavigationStack {
@@ -164,9 +213,12 @@ private struct PilotCopilotView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         Text(strings(store.course.currentLesson.titleKey)).font(.title2.bold())
                         Text(strings(store.course.currentLesson.taskKey))
+                        PilotPDFButton(lesson: store.course.currentLesson)
+
                         Label(store.github.state.session?.repositoryName ?? strings("pilot.project.unassigned"),
                               systemImage: "folder")
                             .font(.footnote).foregroundStyle(.secondary)
+
                         if !store.isCopilotAvailable {
                             Label(strings("pilot.copilot.unavailable"), systemImage: "info.circle")
                         } else if store.github.state.session == nil {
@@ -174,12 +226,14 @@ private struct PilotCopilotView: View {
                         } else if !store.hasAssignedProject {
                             Text(strings("pilot.project.unassigned"))
                         }
+
                         Text(strings("pilot.conversation")).font(.headline)
-                        if (store.conversations[day] ?? []).isEmpty {
+                        if (store.conversations[lessonId] ?? []).isEmpty {
                             Text(strings("pilot.conversation.empty"))
                                 .foregroundStyle(.secondary)
                         }
-                        ForEach(store.conversations[day] ?? []) { message in
+
+                        ForEach(store.conversations[lessonId] ?? []) { message in
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(strings(message.role == .student ? "pilot.you" : "pilot.copilot"))
                                     .font(.caption.bold())
@@ -190,32 +244,40 @@ private struct PilotCopilotView: View {
                             .background(.indigo.opacity(message.role == .student ? 0.12 : 0.05),
                                         in: RoundedRectangle(cornerRadius: 12))
                         }
-                        if store.sendingDays.contains(day) { ProgressView(strings("pilot.sending")) }
-                        if store.failedDays.contains(day) {
+
+                        if store.sendingLessonIds.contains(lessonId) {
+                            ProgressView(strings("pilot.sending"))
+                        }
+                        if store.failedLessonIds.contains(lessonId) {
                             Text(strings("pilot.send.failed")).foregroundStyle(.red)
                         }
+
                         VStack(alignment: .leading, spacing: 10) {
                             TextField(strings("pilot.input"), text: Binding(
-                                get: { store.drafts[day] ?? "" },
-                                set: { store.drafts[day] = $0 }
+                                get: { store.drafts[lessonId] ?? "" },
+                                set: { store.drafts[lessonId] = $0 }
                             ), axis: .vertical)
                             .lineLimit(2...6)
                             .textFieldStyle(.roundedBorder)
-                            .disabled(store.sendingDays.contains(day))
+                            .disabled(store.sendingLessonIds.contains(lessonId))
+
                             Button(strings("pilot.send")) { Task { await store.send() } }
                                 .buttonStyle(.borderedProminent)
-                                .disabled(!store.canSend(day: day))
+                                .disabled(!store.canSend(lessonId: lessonId))
                         }
                         .id("composer")
+
                         PilotResultButton()
+
                         Button(strings("pilot.lesson.complete")) { store.course.markCurrentCompleted() }
                             .buttonStyle(.bordered)
-                            .disabled(store.course.completedDays.contains(day))
+                            .disabled(store.course.completedLessonIds.contains(lessonId))
+
                         Text(strings("pilot.progress.note")).font(.footnote).foregroundStyle(.secondary)
                     }
                     .padding()
                 }
-                .onChange(of: store.conversations[day]?.count) { _ in
+                .onChange(of: store.conversations[lessonId]?.count) { _ in
                     withAnimation { proxy.scrollTo("composer", anchor: .bottom) }
                 }
             }
