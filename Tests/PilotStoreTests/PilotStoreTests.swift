@@ -110,6 +110,50 @@ final class PilotStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testBuiltAppBundleContainsCanonicalLesson01AtLoaderPath() throws {
+        let url = try XCTUnwrap(
+            Bundle.main.url(
+                forResource: "lesson",
+                withExtension: "json",
+                subdirectory: CanonicalLessonLoader.lesson01Subdirectory
+            ),
+            "lesson.json missing at \(CanonicalLessonLoader.lesson01Subdirectory)"
+        )
+        let lesson = try CanonicalLessonLoader().loadLesson01(from: Bundle.main)
+        XCTAssertEqual(url.lastPathComponent, "lesson.json")
+        XCTAssertEqual(lesson.lessonId, "week01.lesson01.computer-as-system")
+        XCTAssertEqual(lesson.title, "Компьютер как система")
+        XCTAssertNotNil(lesson.assignmentSection)
+    }
+
+    @MainActor
+    func testLesson01PresentationUsesStoreCanonicalDataWithoutRawError() throws {
+        let store = PilotStore(githubService: UnavailablePilotGitHubService(),
+                               copilotService: UnavailablePilotCopilotService())
+        let strings = PilotStrings(language: "ru")
+        let lesson = try XCTUnwrap(PilotLesson.weekOne.first { $0.lessonId == lessonOne })
+        let introLesson = try XCTUnwrap(PilotLesson.weekOne.first { $0.lessonId == intro })
+
+        XCTAssertNil(store.canonicalLesson01Error)
+        let canonical = try XCTUnwrap(store.canonicalLesson01)
+        XCTAssertEqual(store.presentedTitle(for: lesson, strings: strings), canonical.title)
+        XCTAssertEqual(store.presentedTask(for: lesson, strings: strings), canonical.assignmentSection?.narration)
+        XCTAssertNotEqual(store.presentedTitle(for: lesson, strings: strings), strings(lesson.titleKey))
+        XCTAssertFalse(store.presentedTitle(for: lesson, strings: strings).contains("ERROR:"))
+        XCTAssertFalse(store.presentedTask(for: lesson, strings: strings).contains("ERROR:"))
+
+        XCTAssertEqual(store.presentedTitle(for: introLesson, strings: strings), strings(introLesson.titleKey))
+        XCTAssertEqual(store.presentedTask(for: introLesson, strings: strings), strings(introLesson.taskKey))
+
+        let fallbackTitle = PilotStore.presentedTitle(for: lesson, canonical: nil, localized: strings(lesson.titleKey))
+        let fallbackTask = PilotStore.presentedTask(for: lesson, canonical: nil, localized: strings(lesson.taskKey))
+        XCTAssertEqual(fallbackTitle, strings(lesson.titleKey))
+        XCTAssertEqual(fallbackTask, strings(lesson.taskKey))
+        XCTAssertFalse(fallbackTitle.contains("ERROR:"))
+        XCTAssertFalse(fallbackTask.contains("ERROR:"))
+    }
+
+    @MainActor
     private func makeStore(copilot: any PilotCopilotServing) -> PilotStore {
         PilotStore(githubService: TestGitHub(), copilotService: copilot)
     }
