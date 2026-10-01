@@ -9,6 +9,8 @@ final class PilotStore: ObservableObject {
     @Published var drafts: [String: String] = [:]
     @Published private(set) var sendingLessonIds: Set<String> = []
     @Published private(set) var failedLessonIds: Set<String> = []
+    @Published private(set) var canonicalLesson01: CanonicalLesson?
+    @Published private(set) var canonicalLesson01Error: CanonicalLessonLoadError?
 
     let configuration: PilotProjectConfiguration
     private let githubService: any PilotGitHubConnecting
@@ -24,6 +26,13 @@ final class PilotStore: ObservableObject {
         self.configuration = configuration
         self.githubService = githubService
         self.copilotService = copilotService
+        do {
+            canonicalLesson01 = try CanonicalLessonLoader().loadLesson01()
+        } catch let error as CanonicalLessonLoadError {
+            canonicalLesson01Error = error
+        } catch {
+            canonicalLesson01Error = .malformedJSON
+        }
     }
 
     var isCopilotAvailable: Bool { copilotService.isAvailable }

@@ -14,6 +14,9 @@ targets:
       - path: App/Services/LocalizationManager.swift
       - path: Resources/Localizations/Copilot.strings
         buildPhase: resources
+      - path: Resources/Education
+        type: folder
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: WebKurier.Copilot.Pilot

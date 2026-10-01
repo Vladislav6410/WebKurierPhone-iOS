@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0.0",
+  "courseId": "webkurier-education-foundation",
+  "lessonId": "week01.lesson01.computer-as-system",
+  "week": 1,
+  "sequence": 1,
+  "language": "ru",
+  "title": "Компьютер как система",
+  "objectives": [
+    "Понять компьютер как систему связанных компонентов.",
+    "Различать motherboard, CPU, RAM и storage на вводном уровне.",
+    "Понять модель Input -> Processing -> Output как упрощённую учебную схему.",
+    "Различать Hardware, Software и Firmware.",
+    "Использовать VERIFIED / INFERRED / UNKNOWN вместо угадывания.",
+    "Запомнить инженерный цикл Inspect -> Understand -> Plan -> Implement -> Test -> Review.",
+    "Понять, что ответ AI требует проверки и сам по себе не является VERIFIED."
+  ],
+  "duration": {
+    "targetMinutes": {"min": 9, "max": 11},
+    "wordCountTarget": {"min": 1000, "max": 1200},
+    "explicitPauseSeconds": 34
+  },
+  "sections": [
+    {"id":"intro","kind":"intro","narration":"Ввод в курс и цель инженерного мышления.","pauseAfterSeconds":3,"visualRefs":["course-route"]},
+    {"id":"computer-system","kind":"concept","narration":"Motherboard, CPU, RAM, storage и рабочая аналогия.","pauseAfterSeconds":4,"visualRefs":["computer-parts","workbench-analogy"]},
+    {"id":"ipo","kind":"concept","narration":"Input, Processing, Output как упрощённая модель.","pauseAfterSeconds":5,"visualRefs":["ipo-diagram"]},
+    {"id":"layers","kind":"concept","narration":"Hardware, Software, Firmware, BIOS/UEFI на вводном уровне.","pauseAfterSeconds":3,"visualRefs":["layers-diagram"]},
+    {"id":"evidence","kind":"concept","narration":"VERIFIED, INFERRED, UNKNOWN и учебный диагностический пример.","pauseAfterSeconds":3,"visualRefs":["evidence-cards"]},
+    {"id":"ai","kind":"concept","narration":"AI как помощник: сначала проверка, потом доверие.","pauseAfterSeconds":4,"visualRefs":["ai-verification"]},
+    {"id":"cycle","kind":"concept","narration":"Inspect, Understand, Plan, Implement, Test, Review.","pauseAfterSeconds":4,"visualRefs":["engineering-cycle"]},
+    {"id":"assignment","kind":"assignment","narration":"Короткая техническая карточка собственного компьютера.","pauseAfterSeconds":0,"visualRefs":[]}
+  ],
+  "visuals": [
+    {"id":"course-route","description":"Computer -> OS & Files -> Terminal -> AI -> First Program -> Website -> GitHub -> Mobile/Engineering.","sourcePolicy":"generated-or-licensed"},
+    {"id":"computer-parts","description":"Открытый компьютер с подписями motherboard, CPU, RAM, storage.","sourcePolicy":"generated-or-licensed"},
+    {"id":"workbench-analogy","description":"Мастер = CPU, рабочий стол = RAM, шкаф = storage, инфраструктура = motherboard.","sourcePolicy":"generated-or-licensed"},
+    {"id":"ipo-diagram","description":"Input -> Processing -> Output с примером камеры/AI/мотора.","sourcePolicy":"generated-or-licensed"},
+    {"id":"layers-diagram","description":"Hardware / Software / Firmware, с BIOS/UEFI как примером низкоуровневой среды.","sourcePolicy":"generated-or-licensed"},
+    {"id":"evidence-cards","description":"Три карточки VERIFIED / INFERRED / UNKNOWN.","sourcePolicy":"generated"},
+    {"id":"ai-verification","description":"AI answer -> verify -> VERIFIED / INFERRED / UNKNOWN.","sourcePolicy":"generated"},
+    {"id":"engineering-cycle","description":"Inspect -> Understand -> Plan -> Implement -> Test -> Review.","sourcePolicy":"generated"}
+  ],
+  "evidenceModel": ["VERIFIED","INFERRED","UNKNOWN"],
+  "engineeringCycle": ["Inspect","Understand","Plan","Implement","Test","Review"],
+  "tts": {
+    "scriptFile":"lesson01_ru_tts.txt",
+    "voiceStyle":"Спокойный, дружелюбный инженер-преподаватель; не рекламный и не детский.",
+    "speedGuidance":"Ориентир 120-130 слов/мин; английские термины произносить чётко и затем давать русский эквивалент.",
+    "pauseSyntax":"[пауза N секунд]",
+    "audioFile":null
+  },
+  "reviewPipeline": [
+    {"role":"Course Architect / Canonical Author","tool":"GPT / ChatGPT","required":true,"trigger":"every lesson"},
+    {"role":"Education Review","tool":"Claude","required":true,"trigger":"every lesson during pilot"},
+    {"role":"Beginner Clarity Review","tool":"Qwen","required":false,"trigger":"beginner-heavy or concept-dense lesson"},
+    {"role":"Creative & TTS Polish","tool":"Grok","required":true,"trigger":"every TTS lesson during pilot"},
+    {"role":"Compression Review","tool":"Gemini","required":false,"trigger":"lesson exceeds duration or repeats content"},
+    {"role":"Technical Second Opinion","tool":"DeepSeek","required":false,"trigger":"engineering terminology or disputed technical detail"},
+    {"role":"External Fact Verification","tool":"Perplexity","required":false,"trigger":"history, standards, current versions, factual claims needing sources"},
+    {"role":"Final Approval","tool":"GPT / ChatGPT","required":true,"trigger":"before TTS/package release"}
+  ],
+  "provenance":{"canonicalStatus":"APPROVED","createdAt":"2026-09-21","finalReviewer":"GPT-5.6 Sol","sourceHashSha256":"5ebcc52e392449a2ec732201447605160128a02aff4777cba91c25d984860b83"},
+  "platformHints": {
+    "ios":{"docs":"Docs/Education/","runtime":"Resources/Education/Lessons/week01/lesson01/","note":"Directory placement verified against current repo roots; Xcode resource inclusion still requires project/build verification before implementation."},
+    "android":{"docs":"docs/education/","runtime":"app/src/main/assets/education/lessons/week01/lesson01/","note":"app/src/main/assets is VERIFIED in current main tree."}
+  }
+}

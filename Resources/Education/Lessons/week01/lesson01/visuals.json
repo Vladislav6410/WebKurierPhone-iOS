@@ -1,0 +1,10 @@
+[
+  {"id":"course-route","description":"Computer -> OS & Files -> Terminal -> AI -> First Program -> Website -> GitHub -> Mobile/Engineering.","sourcePolicy":"generated-or-licensed"},
+  {"id":"computer-parts","description":"Открытый компьютер с подписями motherboard, CPU, RAM, storage.","sourcePolicy":"generated-or-licensed"},
+  {"id":"workbench-analogy","description":"Мастер = CPU, рабочий стол = RAM, шкаф = storage, инфраструктура = motherboard.","sourcePolicy":"generated-or-licensed"},
+  {"id":"ipo-diagram","description":"Input -> Processing -> Output с примером камеры/AI/мотора.","sourcePolicy":"generated-or-licensed"},
+  {"id":"layers-diagram","description":"Hardware / Software / Firmware, с BIOS/UEFI как примером низкоуровневой среды.","sourcePolicy":"generated-or-licensed"},
+  {"id":"evidence-cards","description":"Три карточки VERIFIED / INFERRED / UNKNOWN.","sourcePolicy":"generated"},
+  {"id":"ai-verification","description":"AI answer -> verify -> VERIFIED / INFERRED / UNKNOWN.","sourcePolicy":"generated"},
+  {"id":"engineering-cycle","description":"Inspect -> Understand -> Plan -> Implement -> Test -> Review.","sourcePolicy":"generated"}
+]
