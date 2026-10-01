@@ -5,26 +5,27 @@ final class PilotCoreTests: XCTestCase {
     func testWeekOneContainsCanonicalEightLessons() {
         let week = PilotWeek.roadmap[0]
                 XCTAssertEqual(week.lessons.map(\.lessonId), [
-            "wk01-l00-intro",
             "wk01-l01-computer-system",
             "wk01-l02-os-input-output",
             "wk01-l03-files-terminal",
             "wk01-l04-hardware-usb",
             "wk01-l05-engineering-method",
             "wk01-l06-practice-device-internals",
-            "wk01-l07-practice-telebridge"
+            "wk01-l07-practice-telebridge",
+            "wk01-l08-slot"
         ])
+        XCTAssertNil(PilotLesson.introduction.courseNumber)
         XCTAssertEqual(week.lessons.map(\.order), Array(0...7))
     }
 
     func testWeekOneHasExpectedLessonTypes() {
-        XCTAssertEqual(PilotLesson.weekOne.filter { $0.type == .intro }.count, 1)
-        XCTAssertEqual(PilotLesson.weekOne.filter { $0.type == .theory }.count, 5)
+        XCTAssertEqual(PilotLesson.introduction.type, .intro)
+        XCTAssertEqual(PilotLesson.weekOne.filter { $0.type == .theory }.count, 6)
         XCTAssertEqual(PilotLesson.weekOne.filter { $0.type == .practice }.count, 2)
     }
 
     func testAllPilotLessonsHaveGoogleDrivePDFURLs() {
-        for lesson in PilotLesson.weekOne {
+        for lesson in PilotLesson.weekOne where lesson.linkState == .configured {
             let url = lesson.pdfURL
             XCTAssertEqual(url?.scheme, "https")
             XCTAssertEqual(url?.host, "drive.google.com")
@@ -43,8 +44,8 @@ final class PilotCoreTests: XCTestCase {
         let state = PilotCourseState()
         XCTAssertEqual(state.selectedTab, .project)
         XCTAssertEqual(state.currentLesson.lessonId, "wk01-l00-intro")
-        XCTAssertEqual(state.status(for: PilotLesson.weekOne[0]), .current)
-        XCTAssertEqual(state.status(for: PilotLesson.weekOne[1]), .available)
+        XCTAssertEqual(state.status(for: PilotLesson.introduction), .current)
+        XCTAssertEqual(state.status(for: PilotLesson.weekOne[0]), .available)
     }
 
     func testEachPilotLessonCanOpenInCopilot() {

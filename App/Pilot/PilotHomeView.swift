@@ -136,7 +136,8 @@ private struct PilotCourseView: View {
     }
 
     private func lessonTitle(_ lesson: PilotLesson) -> String {
-        String(format: strings("pilot.lesson.slot.title"), lesson.courseNumber)
+        if lesson.courseNumber == nil { return strings("pilot.intro.title") }
+        return String(format: strings("pilot.lesson.slot.title"), lesson.courseNumber ?? 0)
     }
 
     private func lessonTask(_ lesson: PilotLesson) -> String {
@@ -157,6 +158,9 @@ private struct PilotCourseView: View {
                     Text(String(format: strings("pilot.course.progress"), store.course.completedCount))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+
+                    Text(strings("pilot.intro.title")).font(.title3.bold())
+                    lessonCard(PilotLesson.introduction)
 
                     ForEach(PilotWeek.roadmap) { week in
                         VStack(alignment: .leading, spacing: 8) {
@@ -220,7 +224,8 @@ private struct PilotCopilotView: View {
     private var strings: PilotStrings { PilotStrings(language: localization.currentLanguage) }
 
     private func lessonTitle(_ lesson: PilotLesson) -> String {
-        String(format: strings("pilot.lesson.slot.title"), lesson.courseNumber)
+        if lesson.courseNumber == nil { return strings("pilot.intro.title") }
+        return String(format: strings("pilot.lesson.slot.title"), lesson.courseNumber ?? 0)
     }
 
     private func lessonTask(_ lesson: PilotLesson) -> String {
