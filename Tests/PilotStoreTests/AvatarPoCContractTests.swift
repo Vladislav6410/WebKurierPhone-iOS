@@ -32,4 +32,11 @@ final class AvatarPoCContractTests: XCTestCase {
         XCTAssertEqual(AvatarAudioContract.frameHeight, 720)
         XCTAssertFalse(AvatarAudioContract.avatarDownloadURL.absoluteString.contains("secret"))
     }
+
+    func testSpeechStartsOnlyOnFirstZeroAudioTime() {
+        XCTAssertFalse(AvatarSpeechStartPolicy.shouldStartReply(audioTime: nil, alreadyStarted: false))
+        XCTAssertTrue(AvatarSpeechStartPolicy.shouldStartReply(audioTime: 0, alreadyStarted: false))
+        XCTAssertFalse(AvatarSpeechStartPolicy.shouldStartReply(audioTime: 0, alreadyStarted: true))
+        XCTAssertFalse(AvatarSpeechStartPolicy.shouldStartReply(audioTime: 0.05, alreadyStarted: false))
+    }
 }
