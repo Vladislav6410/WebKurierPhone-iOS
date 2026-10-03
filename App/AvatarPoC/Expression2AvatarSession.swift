@@ -45,7 +45,7 @@ final class Expression2AvatarSession: Expression2Sessioning {
                     bgr: Array(frame.bgr),
                     width: frame.width,
                     height: frame.height,
-                    audioTime: frame.audioTime,
+                    audioTime: frame.audioTime ?? 0,
                     endsReply: frame.endsReply
                 )
                 await MainActor.run {
