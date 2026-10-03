@@ -3,6 +3,10 @@ options:
   deploymentTarget:
     iOS: "16.0"
   developmentLanguage: ru
+packages:
+  homebrew-bithuman:
+    url: https://github.com/bithuman-product/homebrew-bithuman.git
+    from: 2.20.0
 targets:
   WebKurierPilot:
     type: application
@@ -11,12 +15,16 @@ targets:
       - path: App/WebKurierPhoneApp.swift
       - path: App/Pilot
       - path: App/PilotCore
+      - path: App/AvatarPoC
       - path: App/Services/LocalizationManager.swift
       - path: Resources/Localizations/Copilot.strings
         buildPhase: resources
       - path: Resources/Education
         type: folder
         buildPhase: resources
+    dependencies:
+      - package: homebrew-bithuman
+        product: Expression2
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: WebKurier.Copilot.Pilot
@@ -31,6 +39,7 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGNING_ALLOWED: NO
+        EXCLUDED_ARCHS[sdk=iphonesimulator*]: x86_64
   PilotStoreTests:
     type: bundle.unit-test
     platform: iOS
@@ -44,6 +53,7 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: "5.0"
         CODE_SIGNING_ALLOWED: NO
+        EXCLUDED_ARCHS[sdk=iphonesimulator*]: x86_64
 schemes:
   WebKurierPilot:
     build:
