@@ -1,4 +1,5 @@
 import XCTest
+@testable import WebKurierPilot
 
 final class AvatarPoCContractTests: XCTestCase {
     func testAccepts16kMonoSpeech() {
