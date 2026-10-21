@@ -148,12 +148,12 @@ final class CanonicalLessonTests: XCTestCase {
         return directory
     }
 
-    func testWeekOneOrderingAndFutureWeeksRemainLocked() {
+    func testWeekOneOrderingAndFutureWeeksHaveEightLessons() {
         XCTAssertEqual(PilotLesson.weekOne.map(\.order), Array(0...7))
         XCTAssertEqual(PilotLesson.weekOne.count, 8)
 
         let futureWeeks = Array(PilotWeek.roadmap.dropFirst())
         XCTAssertEqual(futureWeeks.map(\.id), Array(2...8))
-        XCTAssertTrue(futureWeeks.allSatisfy { $0.isLocked && $0.lessons.isEmpty })
+        XCTAssertTrue(futureWeeks.allSatisfy { $0.lessons.count == 8 })
     }
 }

@@ -60,6 +60,19 @@ final class PilotStore: ObservableObject {
         )
     }
 
+    /// Numbered titles shared by course cards and the Copilot screen.
+    func presentedCourseTitle(for lesson: PilotLesson, strings: PilotStrings) -> String {
+        guard let number = lesson.courseNumber else { return strings("pilot.intro.title") }
+        let prefix = String(format: strings("pilot.lesson.slot.title"), number)
+        guard lesson.titleKey != "pilot.lesson.slot.title" else { return prefix }
+        return "\(prefix): \(presentedTitle(for: lesson, strings: strings))"
+    }
+
+    /// Assignment text shared by course cards and the Copilot screen.
+    func presentedCourseTask(for lesson: PilotLesson, strings: PilotStrings) -> String {
+        presentedTask(for: lesson, strings: strings)
+    }
+
     static func presentedTitle(for lesson: PilotLesson, canonical: CanonicalLesson?, localized: String) -> String {
         guard lesson.lessonId == canonicalPresentationLessonId,
               canonical?.lessonId == CanonicalLessonMapping.lesson01CanonicalId,
@@ -83,7 +96,7 @@ final class PilotStore: ObservableObject {
     func canSend(lessonId: String) -> Bool {
         isCopilotAvailable && hasAssignedProject && !sendingLessonIds.contains(lessonId)
             && !(drafts[lessonId] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && PilotLesson.weekOne.contains(where: { $0.lessonId == lessonId })
+            && PilotLesson.all.contains(where: { $0.lessonId == lessonId })
     }
 
     func connect() async {
