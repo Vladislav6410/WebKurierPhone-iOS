@@ -5,21 +5,27 @@ import SwiftUI
 struct WebKurierPhoneApp: App {
 
     @StateObject private var localizationManager = LocalizationManager()
+    #if canImport(Expression2)
     @State private var showsAvatarPoC = false
+    #endif
 
     var body: some Scene {
         WindowGroup {
             ZStack(alignment: .bottomTrailing) {
                 PilotHomeView()
+                #if canImport(Expression2)
                 Button("Avatar PoC") {
                     showsAvatarPoC = true
                 }
                 .buttonStyle(.borderedProminent)
                 .padding()
+                #endif
             }
+            #if canImport(Expression2)
             .sheet(isPresented: $showsAvatarPoC) {
                 AvatarPoCView()
             }
+            #endif
             .environmentObject(localizationManager)
         }
     }
