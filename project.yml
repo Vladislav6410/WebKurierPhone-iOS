@@ -3,10 +3,6 @@ options:
   deploymentTarget:
     iOS: "16.0"
   developmentLanguage: ru
-packages:
-  homebrew-bithuman:
-    url: https://github.com/bithuman-product/homebrew-bithuman.git
-    from: 2.20.0
 targets:
   WebKurierPilot:
     type: application
@@ -22,9 +18,6 @@ targets:
       - path: Resources/Education
         type: folder
         buildPhase: resources
-    dependencies:
-      - package: homebrew-bithuman
-        product: Expression2
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: WebKurier.Copilot.Pilot
