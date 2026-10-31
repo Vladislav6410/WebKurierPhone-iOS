@@ -1,8 +1,11 @@
 name: Pilot validation
 on:
+  push:
+    branches: [feat/vehicleinspect-capture-001]
   pull_request:
-    branches: [main, feat/student-week01-drive-links-ios]
+    branches: [main, feat/student-week01-drive-links-ios, fix/ios-pilot-optional-bithuman-v1]
     paths:
+      - 'App/VehicleInspect/**'
       - 'App/Pilot/**'
       - 'App/PilotCore/**'
       - 'App/WebKurierPhoneApp.swift'

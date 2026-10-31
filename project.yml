@@ -11,6 +11,7 @@ targets:
       - path: App/WebKurierPhoneApp.swift
       - path: App/Pilot
       - path: App/PilotCore
+      - path: App/VehicleInspect
       - path: App/AvatarPoC
       - path: App/Services/LocalizationManager.swift
       - path: Resources/Localizations/Copilot.strings
@@ -25,6 +26,7 @@ targets:
         SWIFT_VERSION: "5.0"
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) PILOT_MVP"
         GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSCameraUsageDescription: 'WebKurier photographs vehicle panels for visual damage inspection.'
         INFOPLIST_KEY_CFBundleDisplayName: WebKurier Copilot
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
