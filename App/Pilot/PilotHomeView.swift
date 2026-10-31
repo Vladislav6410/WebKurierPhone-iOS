@@ -60,6 +60,11 @@ private struct PilotProjectView: View {
                         .buttonStyle(.borderedProminent)
                     Text(strings("pilot.preview.note"))
                         .font(.footnote).foregroundStyle(.secondary)
+                    NavigationLink {
+                        VehicleInspectView()
+                    } label: {
+                        Label("VehicleInspect — осмотр кузова", systemImage: "camera")
+                    }
                     PilotResultButton()
                 }
                 .padding()
