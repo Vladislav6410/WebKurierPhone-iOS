@@ -92,14 +92,15 @@ final class VehicleCameraController: UIViewController, AVCapturePhotoCaptureDele
             do {
                 let input = try AVCaptureDeviceInput(device: device)
                 self.session.beginConfiguration()
-                defer { self.session.commitConfiguration() }
                 guard self.session.canAddInput(input), self.session.canAddOutput(self.output) else {
+                    self.session.commitConfiguration()
                     DispatchQueue.main.async { self.onError?("Невозможно настроить фотосъёмку.") }
                     return
                 }
                 self.session.addInput(input)
                 self.session.addOutput(self.output)
                 self.configured = true
+                self.session.commitConfiguration()
                 self.session.startRunning()
             } catch {
                 DispatchQueue.main.async { self.onError?(error.localizedDescription) }
