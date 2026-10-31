@@ -44,32 +44,6 @@ enum VehicleInspectionStorage {
     }
 }
 
-private struct VehicleCameraPicker: UIViewControllerRepresentable {
-    let onImage: (UIImage) -> Void
-    let onCancel: () -> Void
-
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = .camera
-        picker.delegate = context.coordinator
-        return picker
-    }
-
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-
-    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
-
-    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-        let parent: VehicleCameraPicker
-        init(parent: VehicleCameraPicker) { self.parent = parent }
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { parent.onCancel() }
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            guard let image = info[.originalImage] as? UIImage else { parent.onCancel(); return }
-            parent.onImage(image)
-        }
-    }
-}
-
 struct VehicleInspectView: View {
     @State private var showingCamera = false
     @State private var photoData: Data?
@@ -120,11 +94,15 @@ struct VehicleInspectView: View {
         .navigationTitle("VehicleInspect")
         .onAppear(perform: reload)
         .sheet(isPresented: $showingCamera) {
-            VehicleCameraPicker(onImage: { image in
-                photoData = image.jpegData(compressionQuality: 1.0)
+            VehicleCameraView(onPhoto: { bytes in
+                photoData = bytes
                 showingCamera = false
-                if photoData == nil { errorMessage = "Не удалось подготовить фотографию." }
-            }, onCancel: { showingCamera = false })
+            }, onCancel: {
+                showingCamera = false
+            }, onError: { message in
+                showingCamera = false
+                errorMessage = message
+            })
         }
         .sheet(item: $selected) { record in
             ScrollView {
