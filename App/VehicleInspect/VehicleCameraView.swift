@@ -100,7 +100,6 @@ final class VehicleCameraController: UIViewController, AVCapturePhotoCaptureDele
                 self.session.addInput(input)
                 self.session.addOutput(self.output)
                 self.configured = true
-                self.session.commitConfiguration()
                 self.session.startRunning()
             } catch {
                 DispatchQueue.main.async { self.onError?(error.localizedDescription) }
@@ -111,7 +110,10 @@ final class VehicleCameraController: UIViewController, AVCapturePhotoCaptureDele
     @objc private func capture() {
         sessionQueue.async { [weak self] in
             guard let self, self.configured, self.session.isRunning else { return }
-            self.output.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
+            let settings = self.output.availablePhotoCodecTypes.contains(.jpeg)
+                ? AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg])
+                : AVCapturePhotoSettings()
+            self.output.capturePhoto(with: settings, delegate: self)
         }
     }
 
