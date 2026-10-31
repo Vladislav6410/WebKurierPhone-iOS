@@ -16,6 +16,10 @@ struct VehicleCameraView: UIViewControllerRepresentable {
         return controller
     }
 
+    static func dismantleUIViewController(_ controller: VehicleCameraController, coordinator: ()) {
+        controller.cancelWithoutCallback()
+    }
+
     func updateUIViewController(_ controller: VehicleCameraController, context: Context) {}
 }
 
@@ -28,7 +32,14 @@ final class VehicleCameraController: UIViewController, AVCapturePhotoCaptureDele
     private let output = AVCapturePhotoOutput()
     private let preview = AVCaptureVideoPreviewLayer()
     private let sessionQueue = DispatchQueue(label: "webkurier.vehicleinspect.camera")
+    // UI and completion state is confined to the main queue; session work is serial.
+    private let shutter = UIButton(type: .system)
     private var configured = false
+    private var capturing = false
+    private var finished = false
+    private var capturedBytes: Data?
+    private var captureError: String?
+    private var observers: [NSObjectProtocol] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -37,7 +48,7 @@ final class VehicleCameraController: UIViewController, AVCapturePhotoCaptureDele
         preview.videoGravity = .resizeAspectFill
         view.layer.addSublayer(preview)
 
-        let shutter = UIButton(type: .system)
+        shutter.isEnabled = false
         shutter.setTitle("Снять", for: .normal)
         shutter.addTarget(self, action: #selector(capture), for: .touchUpInside)
         shutter.backgroundColor = .white
@@ -59,12 +70,25 @@ final class VehicleCameraController: UIViewController, AVCapturePhotoCaptureDele
             cancel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
             cancel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20)
         ])
+        for name in [AVCaptureSession.runtimeErrorNotification, AVCaptureSession.wasInterruptedNotification, UIApplication.didEnterBackgroundNotification] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.fail("Съёмка прервана. Откройте камеру и повторите попытку.")
+            })
+        }
         requestCamera()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         preview.frame = view.bounds
+        if let connection = preview.connection, connection.isVideoOrientationSupported {
+            switch view.window?.windowScene?.interfaceOrientation {
+            case .landscapeLeft: connection.videoOrientation = .landscapeLeft
+            case .landscapeRight: connection.videoOrientation = .landscapeRight
+            case .portraitUpsideDown: connection.videoOrientation = .portraitUpsideDown
+            default: connection.videoOrientation = .portrait
+            }
+        }
     }
 
     private func requestCamera() {
@@ -73,12 +97,13 @@ final class VehicleCameraController: UIViewController, AVCapturePhotoCaptureDele
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
                 DispatchQueue.main.async {
-                    if granted { self?.configureCamera() }
-                    else { self?.onError?("Доступ к камере запрещён. Разрешите доступ в настройках iPhone.") }
+                    guard let self, !self.finished else { return }
+                    if granted { self.configureCamera() }
+                    else { self.fail("Доступ к камере запрещён. Разрешите доступ в настройках iPhone.") }
                 }
             }
         default:
-            onError?("Доступ к камере запрещён. Разрешите доступ в настройках iPhone.")
+            fail("Доступ к камере запрещён или ограничен. Разрешите доступ в настройках iPhone.")
         }
     }
 
@@ -86,7 +111,7 @@ final class VehicleCameraController: UIViewController, AVCapturePhotoCaptureDele
         sessionQueue.async { [weak self] in
             guard let self else { return }
             guard let device = AVCaptureDevice.default(for: .video) else {
-                DispatchQueue.main.async { self.onError?("Камера недоступна.") }
+                DispatchQueue.main.async { self.fail("Камера недоступна.") }
                 return
             }
             do {
@@ -94,49 +119,102 @@ final class VehicleCameraController: UIViewController, AVCapturePhotoCaptureDele
                 self.session.beginConfiguration()
                 guard self.session.canAddInput(input), self.session.canAddOutput(self.output) else {
                     self.session.commitConfiguration()
-                    DispatchQueue.main.async { self.onError?("Невозможно настроить фотосъёмку.") }
+                    DispatchQueue.main.async { self.fail("Невозможно настроить фотосъёмку.") }
                     return
                 }
                 self.session.addInput(input)
                 self.session.addOutput(self.output)
-                self.configured = true
                 self.session.commitConfiguration()
+                guard self.output.availablePhotoCodecTypes.contains(.jpeg) else {
+                    DispatchQueue.main.async { self.fail("Камера не поддерживает JPEG.") }
+                    return
+                }
                 self.session.startRunning()
+                DispatchQueue.main.async {
+                    guard !self.finished else { return }
+                    self.configured = true
+                    self.shutter.isEnabled = true
+                }
             } catch {
-                DispatchQueue.main.async { self.onError?(error.localizedDescription) }
+                DispatchQueue.main.async { self.fail(error.localizedDescription) }
             }
         }
     }
 
     @objc private func capture() {
-        sessionQueue.async { [weak self] in
-            guard let self, self.configured, self.session.isRunning else { return }
-            let settings = self.output.availablePhotoCodecTypes.contains(.jpeg)
-                ? AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg])
-                : AVCapturePhotoSettings()
-            self.output.capturePhoto(with: settings, delegate: self)
+        guard configured, !capturing, !finished else { return }
+        capturing = true
+        shutter.isEnabled = false
+        // Preserve orientation in the encoded file's metadata. Preview decoding is separate.
+        let orientation: AVCaptureVideoOrientation
+        switch view.window?.windowScene?.interfaceOrientation {
+        case .landscapeLeft: orientation = .landscapeLeft
+        case .landscapeRight: orientation = .landscapeRight
+        case .portraitUpsideDown: orientation = .portraitUpsideDown
+        default: orientation = .portrait
+        }
+        sessionQueue.async { [self] in
+            guard session.isRunning else {
+                DispatchQueue.main.async { self.fail("Сессия камеры остановлена. Повторите съёмку.") }
+                return
+            }
+            if let connection = output.connection(with: .video), connection.isVideoOrientationSupported {
+                connection.videoOrientation = orientation
+            }
+            let settings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg])
+            output.capturePhoto(with: settings, delegate: self)
         }
     }
 
-    @objc private func cancelCapture() { onCancel?() }
+    @objc private func cancelCapture() {
+        guard !finished else { return }
+        cancelWithoutCallback()
+        onCancel?()
+    }
+
+    func cancelWithoutCallback() {
+        finished = true
+        observers.forEach { NotificationCenter.default.removeObserver($0) }
+        observers.removeAll()
+        shutter.isEnabled = false
+        sessionQueue.async { [self] in
+            if session.isRunning { session.stopRunning() }
+        }
+    }
+
+    private func fail(_ message: String) {
+        guard !finished else { return }
+        cancelWithoutCallback()
+        onError?(message)
+    }
 
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        if let error {
-            DispatchQueue.main.async { self.onError?(error.localizedDescription) }
-            return
+        let bytes = photo.fileDataRepresentation()
+        DispatchQueue.main.async { [self] in
+            guard !finished, capturing else { return }
+            capturedBytes = bytes
+            captureError = error?.localizedDescription
         }
-        guard let bytes = photo.fileDataRepresentation(), !bytes.isEmpty else {
-            DispatchQueue.main.async { self.onError?("Камера не вернула данные снимка.") }
-            return
+    }
+
+    func photoOutput(_ output: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings, error: Error?) {
+        DispatchQueue.main.async { [self] in
+            guard !finished, capturing else { return }
+            if let message = error?.localizedDescription ?? captureError {
+                fail(message)
+                return
+            }
+            guard let bytes = capturedBytes, !bytes.isEmpty else {
+                fail("Камера не вернула данные снимка. Повторите съёмку.")
+                return
+            }
+            cancelWithoutCallback()
+            onPhoto?(bytes)
         }
-        DispatchQueue.main.async { self.onPhoto?(bytes) }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        sessionQueue.async { [weak self] in
-            guard let self else { return }
-            if self.session.isRunning { self.session.stopRunning() }
-        }
+        cancelWithoutCallback()
     }
 }

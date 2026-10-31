@@ -1,5 +1,7 @@
 import SwiftUI
 import UIKit
+import ImageIO
+import UniformTypeIdentifiers
 
 struct VehicleInspection: Codable, Identifiable {
     let id: UUID
@@ -8,22 +10,46 @@ struct VehicleInspection: Codable, Identifiable {
     let defect: String
     let note: String
     let imageFilename: String
+    // Optional for records created before format validation was introduced.
+    let imageFormat: String?
 }
 
 enum VehicleInspectionStorage {
+    /// Only JPEG is accepted. Decode for validation/preview, never for rewriting the source.
+    static func validateJPEG(_ data: Data) throws {
+        guard data.starts(with: [0xFF, 0xD8, 0xFF]),
+              data.suffix(2) == Data([0xFF, 0xD9]),
+              let source = CGImageSourceCreateWithData(data as CFData, nil),
+              (CGImageSourceGetType(source) as String?) == UTType.jpeg.identifier,
+              CGImageSourceGetStatus(source) == .statusComplete,
+              CGImageSourceCreateImageAtIndex(source, 0, nil) != nil else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+    }
+
+    static func imageData(for record: VehicleInspection, root: URL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]) throws -> Data {
+        guard record.imageFilename == record.id.uuidString + ".jpg",
+              record.imageFormat == nil || record.imageFormat == "public.jpeg" else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        let bytes = try Data(contentsOf: directory(root: root).appendingPathComponent(record.imageFilename))
+        try validateJPEG(bytes)
+        return bytes
+    }
+
     static func directory(root: URL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]) -> URL {
         root.appendingPathComponent("VehicleInspect", isDirectory: true)
     }
 
     static func save(imageData: Data, panel: String, defect: String, note: String, root: URL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]) throws -> VehicleInspection {
-        guard !imageData.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
+        try validateJPEG(imageData)
         let folder = directory(root: root)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let id = UUID()
         let filename = id.uuidString + ".jpg"
         let imageURL = folder.appendingPathComponent(filename)
         let recordURL = folder.appendingPathComponent(id.uuidString + ".json")
-        let record = VehicleInspection(id: id, createdAt: Date(), panel: panel, defect: defect, note: note, imageFilename: filename)
+        let record = VehicleInspection(id: id, createdAt: Date(), panel: panel, defect: defect, note: note, imageFilename: filename, imageFormat: "public.jpeg")
         do {
             try imageData.write(to: imageURL, options: .atomic)
             try JSONEncoder().encode(record).write(to: recordURL, options: .atomic)
@@ -53,6 +79,7 @@ struct VehicleInspectView: View {
     @State private var records: [VehicleInspection] = []
     @State private var selected: VehicleInspection?
     @State private var errorMessage: String?
+    @State private var cameraError: String?
 
     var body: some View {
         Form {
@@ -93,21 +120,29 @@ struct VehicleInspectView: View {
         }
         .navigationTitle("VehicleInspect")
         .onAppear(perform: reload)
-        .sheet(isPresented: $showingCamera) {
+        .sheet(isPresented: $showingCamera, onDismiss: {
+            errorMessage = cameraError
+            cameraError = nil
+        }) {
             VehicleCameraView(onPhoto: { bytes in
-                photoData = bytes
+                do {
+                    try VehicleInspectionStorage.validateJPEG(bytes)
+                    photoData = bytes
+                } catch {
+                    cameraError = "Камера вернула неподдерживаемый или повреждённый JPEG. Повторите съёмку."
+                }
                 showingCamera = false
             }, onCancel: {
                 showingCamera = false
             }, onError: { message in
+                cameraError = message
                 showingCamera = false
-                errorMessage = message
             })
         }
         .sheet(item: $selected) { record in
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    if let data = try? Data(contentsOf: VehicleInspectionStorage.directory().appendingPathComponent(record.imageFilename)),
+                    if let data = try? VehicleInspectionStorage.imageData(for: record),
                        let image = UIImage(data: data) {
                         Image(uiImage: image).resizable().scaledToFit()
                     } else {
