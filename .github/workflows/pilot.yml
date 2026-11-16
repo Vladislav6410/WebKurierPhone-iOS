@@ -3,6 +3,7 @@ on:
   pull_request:
     branches: [main, feat/student-week01-drive-links-ios]
     paths:
+      - 'App/AvatarPoC/**'
       - 'App/Pilot/**'
       - 'App/PilotCore/**'
       - 'App/WebKurierPhoneApp.swift'
@@ -11,22 +12,57 @@ on:
       - 'Tests/**'
       - 'Package.swift'
       - 'project.yml'
+      - 'WebKurierPilot.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved'
       - '.github/workflows/pilot.yml'
 permissions:
   contents: read
 jobs:
   pilot:
-    runs-on: macos-15
+    runs-on: macos-26
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - name: Record toolchain
+        run: |
+          sw_vers
+          uname -m
+          xcodebuild -version
+          swift --version
       - name: Test portable course and service state
         run: swift test
       - name: Generate isolated pilot app
         run: |
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate --spec project.yml
+      - name: Resolve packages from reviewed lockfile (clean cache)
+        run: |
+          LOCKFILE=WebKurierPilot.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+          test -f "$LOCKFILE"
+          shasum -a 256 "$LOCKFILE" > "$RUNNER_TEMP/PilotPackageResolved.sha256"
+          python3 - <<'PYLOCK'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("WebKurierPilot.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved").read_text())
+          pins = data["pins"]
+          assert len(pins) == 1, pins
+          pin = pins[0]
+          assert pin["identity"] == "homebrew-bithuman", pin
+          assert pin["location"] == "https://gitlab.com/bithuman/sdk/homebrew-bithuman", pin
+          assert pin["state"] == {"revision": "9756d48cc4b6dbb4547f082c496bdfd24d9966a4", "version": "2.23.2"}, pin
+          PYLOCK
+          test ! -e "$RUNNER_TEMP/PilotSourcePackages"
+          xcodebuild -resolvePackageDependencies -disablePackageRepositoryCache -project WebKurierPilot.xcodeproj -scheme WebKurierPilot -clonedSourcePackagesDirPath "$RUNNER_TEMP/PilotSourcePackages" -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO
+          test "$(git -C "$RUNNER_TEMP/PilotSourcePackages/checkouts/homebrew-bithuman" rev-parse HEAD)" = "9756d48cc4b6dbb4547f082c496bdfd24d9966a4"
+          shasum -a 256 -c "$RUNNER_TEMP/PilotPackageResolved.sha256"
+          git diff --exit-code -- "$LOCKFILE"
       - name: Test pilot app on available iPhone simulator
         run: |
           DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; data=json.load(sys.stdin); print(next(d["udid"] for runtime,devices in data["devices"].items() if "iOS" in runtime for d in devices if d["name"].startswith("iPhone")))')
-          xcodebuild test -project WebKurierPilot.xcodeproj -scheme WebKurierPilot -destination "platform=iOS Simulator,id=$DEVICE_ID" -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO
+          xcodebuild test -project WebKurierPilot.xcodeproj -scheme WebKurierPilot -destination "platform=iOS Simulator,id=$DEVICE_ID" -derivedDataPath DerivedData -clonedSourcePackagesDirPath "$RUNNER_TEMP/PilotSourcePackages" -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO
+      - name: Verify lockfile stayed unchanged
+        if: always()
+        run: |
+          shasum -a 256 -c "$RUNNER_TEMP/PilotPackageResolved.sha256"
+          git diff --exit-code -- WebKurierPilot.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
