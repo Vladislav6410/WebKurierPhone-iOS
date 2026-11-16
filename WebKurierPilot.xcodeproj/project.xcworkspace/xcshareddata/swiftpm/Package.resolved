@@ -1,0 +1,15 @@
+{
+  "originHash": "1900a3a913d1a1590d59ae58092fab3751721aa3111f356ea76391c4b869b49c",
+  "pins": [
+    {
+      "identity": "homebrew-bithuman",
+      "kind": "remoteSourceControl",
+      "location": "https://gitlab.com/bithuman/sdk/homebrew-bithuman",
+      "state": {
+        "revision": "9756d48cc4b6dbb4547f082c496bdfd24d9966a4",
+        "version": "2.23.2"
+      }
+    }
+  ],
+  "version": 3
+}
