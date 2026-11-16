@@ -1,6 +1,13 @@
 .build/
 .swiftpm/
-WebKurierPilot.xcodeproj/
+WebKurierPilot.xcodeproj/*
+!WebKurierPilot.xcodeproj/project.xcworkspace/
+WebKurierPilot.xcodeproj/project.xcworkspace/*
+!WebKurierPilot.xcodeproj/project.xcworkspace/xcshareddata/
+WebKurierPilot.xcodeproj/project.xcworkspace/xcshareddata/*
+!WebKurierPilot.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+WebKurierPilot.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/*
+!WebKurierPilot.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 DerivedData/
 Config/env.plist
 *.xcuserstate

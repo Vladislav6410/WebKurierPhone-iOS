@@ -11,7 +11,7 @@ enum AvatarAudioContract {
     static let framesPerSecond = 20
 
     static let avatarDownloadURL = URL(string: "https://api.bithuman.ai/v1/agent/A23WJF0199/model/download?model=expression-2")!
-    static let sharedEngineDownloadURL = URL(string: "https://github.com/bithuman-product/homebrew-bithuman/releases/download/expression2-engine-mac-arm64-1.0.0/mac-arm64-1.0.0.engine")!
+    static let sharedEngineDownloadURL = URL(string: "https://downloads.bithuman.ai/homebrew-bithuman/expression2-engine-mac-arm64-1.0.0/mac-arm64-1.0.0.engine")!
     static let speechDownloadURL = URL(string: "https://api.bithuman.ai/v1/agent/A23WJF0199/model/download?model=expression-2&member=demo_speech_16k.wav")!
 
     static func validate(samples: [Float], sampleRate: Int, channels: Int) -> AvatarPoCError? {

@@ -1,8 +1,11 @@
 name: Pilot validation
 on:
+  push:
+    branches: [fix/ios-bithuman-sdk-2232]
   pull_request:
     branches: [main, feat/student-week01-drive-links-ios]
     paths:
+      - 'App/AvatarPoC/**'
       - 'App/Pilot/**'
       - 'App/PilotCore/**'
       - 'App/WebKurierPhoneApp.swift'
@@ -11,21 +14,40 @@ on:
       - 'Tests/**'
       - 'Package.swift'
       - 'project.yml'
+      - 'WebKurierPilot.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved'
       - '.github/workflows/pilot.yml'
 permissions:
   contents: read
 jobs:
   pilot:
-    runs-on: macos-15
+    runs-on: macos-26
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - name: Record toolchain
+        run: |
+          sw_vers
+          uname -m
+          xcodebuild -version
+          swift --version
       - name: Test portable course and service state
         run: swift test
       - name: Generate isolated pilot app
         run: |
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate --spec project.yml
+      - name: Bootstrap reviewed SwiftPM lockfile
+        run: |
+          xcodebuild -resolvePackageDependencies -project WebKurierPilot.xcodeproj -scheme WebKurierPilot -clonedSourcePackagesDirPath "$RUNNER_TEMP/PilotSourcePackages" CODE_SIGNING_ALLOWED=NO
+          python3 - <<'PYLOCK'
+          import json
+          from pathlib import Path
+          lock = Path("WebKurierPilot.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved")
+          data = json.loads(lock.read_text())
+          print("REVIEWED_LOCKFILE=" + json.dumps(data, separators=(",", ":")))
+          PYLOCK
       - name: Test pilot app on available iPhone simulator
         run: |
           DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; data=json.load(sys.stdin); print(next(d["udid"] for runtime,devices in data["devices"].items() if "iOS" in runtime for d in devices if d["name"].startswith("iPhone")))')
